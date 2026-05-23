@@ -14,9 +14,9 @@ A beginner-friendly WordPress maintenance mode plugin.
 
 SiteCare Maintenance Mode helps WordPress administrators show visitors a simple maintenance or offline page while site work is in progress.
 
-This MVP version adds basic admin settings for enabling or disabling maintenance mode, scheduling maintenance windows, customizing the maintenance page text, showing optional visitor contact details, applying simple branding, previewing the maintenance page, choosing logged-in roles and trusted IP addresses that can bypass maintenance mode, and resetting the visible settings form to defaults. When enabled, visitors see a simple maintenance page, while administrators, selected logged-in roles, and whitelisted IP addresses can continue viewing the normal site.
+This MVP version adds basic admin settings for enabling or disabling maintenance mode, scheduling maintenance windows, customizing the maintenance page text, showing optional safe HTML content, showing optional visitor contact details, applying simple branding, choosing a frontend design preset, showing an optional countdown timer, previewing the maintenance page, choosing logged-in roles and trusted IP addresses that can bypass maintenance mode, and resetting the visible settings form to defaults. When enabled, visitors see a simple maintenance page, while administrators, selected logged-in roles, and whitelisted IP addresses can continue viewing the normal site.
 
-Future phases may add templates and custom HTML.
+Future phases may add a fuller template system, custom HTML, and other advanced controls.
 
 == Installation ==
 
@@ -35,7 +35,19 @@ Yes. Administrators can enable or disable maintenance mode from the WordPress ad
 
 = What can I customize? =
 
-You can customize the maintenance page title, message, contact email, phone number, social links, footer text, logo, background color, text color, and layout width.
+You can customize the maintenance page title, message, safe custom HTML content, contact email, phone number, social links, footer text, logo, background color, text color, layout width, design preset, and optional countdown timer.
+
+= Which design presets are included? =
+
+This version includes Classic, Center Card, and Minimal design presets. The settings page shows simple HTML/CSS thumbnail previews for each preset.
+
+= Can I add custom HTML? =
+
+Yes. You can enable custom HTML content and add limited safe HTML such as paragraphs, lists, links, bold text, and emphasis. When custom HTML is enabled and not empty, it replaces the built-in preset content on the maintenance page. Unsafe tags like scripts are removed when settings are saved.
+
+= Does the countdown timer end maintenance mode automatically? =
+
+No. The countdown timer is visual only. Manual maintenance mode and scheduled maintenance mode still control whether maintenance mode is active.
 
 = Can I preview the maintenance page? =
 
@@ -76,6 +88,13 @@ This version is for development and learning. Test it carefully before using it 
 * Added scheduled maintenance mode with WordPress timezone-aware start and end times.
 * Added role-based bypass settings for selected logged-in user roles.
 * Added IP whitelist bypass for exact IPv4 and IPv6 addresses.
+* Added Classic, Center Card, and Minimal frontend template selection.
+* Added HTML/CSS template thumbnail previews in the admin settings page.
+* Added an optional visual countdown timer.
+* Added a small class-based organization layer for settings and frontend hooks.
+* Improved template presets so Classic, Center Card, and Minimal have clearer visual styles.
+* Added safe custom HTML content using WordPress HTML sanitization.
+* Added a red admin bar status label when maintenance mode is active.
 * Added editable maintenance page title and message fields.
 * Added optional email, phone, social link, and footer text fields.
 * Added logo, color, and layout width settings.

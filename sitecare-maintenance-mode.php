@@ -42,6 +42,10 @@ define( 'SITECARE_MAINTENANCE_URL', plugin_dir_url( __FILE__ ) );
  */
 define( 'SITECARE_MAINTENANCE_OPTION', 'sitecare_maintenance_options' );
 
+require_once SITECARE_MAINTENANCE_PATH . 'includes/class-sitecare-maintenance-plugin.php';
+require_once SITECARE_MAINTENANCE_PATH . 'includes/class-sitecare-maintenance-settings.php';
+require_once SITECARE_MAINTENANCE_PATH . 'includes/class-sitecare-maintenance-frontend.php';
+
 /**
  * Runs when the plugin is activated.
  *
@@ -73,6 +77,21 @@ register_activation_hook( __FILE__, 'sitecare_maintenance_activate' );
 register_deactivation_hook( __FILE__, 'sitecare_maintenance_deactivate' );
 
 /**
+ * Gets the main plugin bootstrap instance.
+ *
+ * @return SiteCare_Maintenance_Plugin
+ */
+function sitecare_maintenance_plugin() {
+	static $plugin = null;
+
+	if ( null === $plugin ) {
+		$plugin = new SiteCare_Maintenance_Plugin();
+	}
+
+	return $plugin;
+}
+
+/**
  * Gets the default plugin options.
  *
  * @return array
@@ -95,8 +114,35 @@ function sitecare_maintenance_default_options() {
 		'background_color'   => '#f5f5f5',
 		'text_color'         => '#111111',
 		'layout_width'       => 'medium',
+		'template_style'     => 'classic',
+		'countdown_enabled'  => 0,
+		'countdown_target'   => '',
+		'custom_html_enabled' => 0,
+		'custom_html'        => '',
 		'bypass_roles'       => array( 'administrator' ),
 		'ip_whitelist'       => array(),
+	);
+}
+
+/**
+ * Gets allowed frontend template choices.
+ *
+ * @return array
+ */
+function sitecare_maintenance_get_template_styles() {
+	return array(
+		'classic'     => array(
+			'label'       => __( 'Classic', 'sitecare-maintenance-mode' ),
+			'description' => __( 'Traditional clean page with balanced spacing and a professional default style.', 'sitecare-maintenance-mode' ),
+		),
+		'center-card' => array(
+			'label'       => __( 'Center Card', 'sitecare-maintenance-mode' ),
+			'description' => __( 'Modern card layout with stronger contrast, rounded corners, and a soft shadow.', 'sitecare-maintenance-mode' ),
+		),
+		'minimal'     => array(
+			'label'       => __( 'Minimal', 'sitecare-maintenance-mode' ),
+			'description' => __( 'Typography-first page with less decoration for simple business updates.', 'sitecare-maintenance-mode' ),
+		),
 	);
 }
 
@@ -164,6 +210,16 @@ function sitecare_maintenance_sanitize_ip_whitelist( $ips ) {
 	}
 
 	return array_values( array_unique( $clean ) );
+}
+
+/**
+ * Sanitizes a countdown datetime-local value.
+ *
+ * @param string $value Raw datetime-local value.
+ * @return string
+ */
+function sitecare_maintenance_sanitize_countdown_datetime( $value ) {
+	return sitecare_maintenance_sanitize_schedule_datetime( $value );
 }
 
 /**
@@ -304,6 +360,12 @@ function sitecare_maintenance_sanitize_options( $input ) {
 	$text_color       = sanitize_hex_color( $input['text_color'] );
 	$layout_widths    = sitecare_maintenance_get_layout_widths();
 	$layout_width     = sanitize_key( $input['layout_width'] );
+	$template_styles  = sitecare_maintenance_get_template_styles();
+	$template_style   = sanitize_key( $input['template_style'] );
+	$countdown_enabled = empty( $input['countdown_enabled'] ) ? 0 : 1;
+	$countdown_target  = sitecare_maintenance_sanitize_countdown_datetime( $input['countdown_target'] );
+	$custom_html_enabled = empty( $input['custom_html_enabled'] ) ? 0 : 1;
+	$custom_html         = wp_kses_post( $input['custom_html'] );
 
 	if ( empty( $background_color ) ) {
 		$background_color = $defaults['background_color'];
@@ -315,6 +377,10 @@ function sitecare_maintenance_sanitize_options( $input ) {
 
 	if ( ! array_key_exists( $layout_width, $layout_widths ) ) {
 		$layout_width = $defaults['layout_width'];
+	}
+
+	if ( ! array_key_exists( $template_style, $template_styles ) ) {
+		$template_style = $defaults['template_style'];
 	}
 
 	$schedule_enabled = empty( $input['schedule_enabled'] ) ? 0 : 1;
@@ -361,6 +427,11 @@ function sitecare_maintenance_sanitize_options( $input ) {
 		'background_color'   => $background_color,
 		'text_color'         => $text_color,
 		'layout_width'       => $layout_width,
+		'template_style'     => $template_style,
+		'countdown_enabled'  => $countdown_enabled,
+		'countdown_target'   => $countdown_target,
+		'custom_html_enabled' => $custom_html_enabled,
+		'custom_html'        => $custom_html,
 		'bypass_roles'       => $bypass_roles,
 		'ip_whitelist'       => $ip_whitelist,
 	);
@@ -377,7 +448,7 @@ function sitecare_maintenance_register_settings() {
 		SITECARE_MAINTENANCE_OPTION,
 		array(
 			'type'              => 'array',
-			'sanitize_callback' => 'sitecare_maintenance_sanitize_options',
+			'sanitize_callback' => array( 'SiteCare_Maintenance_Settings', 'sanitize_options' ),
 			'default'           => sitecare_maintenance_default_options(),
 		)
 	);
@@ -394,6 +465,10 @@ function sitecare_maintenance_register_settings() {
 		'sitecare_maintenance_contact_section' => array(
 			'title'    => esc_html__( 'Contact Details', 'sitecare-maintenance-mode' ),
 			'callback' => 'sitecare_maintenance_render_contact_intro',
+		),
+		'sitecare_maintenance_templates_section' => array(
+			'title'    => esc_html__( 'Templates', 'sitecare-maintenance-mode' ),
+			'callback' => 'sitecare_maintenance_render_templates_intro',
 		),
 		'sitecare_maintenance_design_section'  => array(
 			'title'    => esc_html__( 'Branding & Design', 'sitecare-maintenance-mode' ),
@@ -463,6 +538,38 @@ function sitecare_maintenance_register_settings() {
 	);
 
 	add_settings_field(
+		'sitecare_maintenance_custom_html_enabled',
+		esc_html__( 'Custom HTML Content', 'sitecare-maintenance-mode' ),
+		'sitecare_maintenance_render_custom_html_enabled_field',
+		'sitecare-maintenance-mode',
+		'sitecare_maintenance_content_section'
+	);
+
+	add_settings_field(
+		'sitecare_maintenance_custom_html',
+		esc_html__( 'Custom HTML', 'sitecare-maintenance-mode' ),
+		'sitecare_maintenance_render_custom_html_field',
+		'sitecare-maintenance-mode',
+		'sitecare_maintenance_content_section'
+	);
+
+	add_settings_field(
+		'sitecare_maintenance_countdown_enabled',
+		esc_html__( 'Countdown Timer', 'sitecare-maintenance-mode' ),
+		'sitecare_maintenance_render_countdown_enabled_field',
+		'sitecare-maintenance-mode',
+		'sitecare_maintenance_content_section'
+	);
+
+	add_settings_field(
+		'sitecare_maintenance_countdown_target',
+		esc_html__( 'Countdown Target Date/Time', 'sitecare-maintenance-mode' ),
+		'sitecare_maintenance_render_countdown_target_field',
+		'sitecare-maintenance-mode',
+		'sitecare_maintenance_content_section'
+	);
+
+	add_settings_field(
 		'sitecare_maintenance_contact_email',
 		esc_html__( 'Contact Email', 'sitecare-maintenance-mode' ),
 		'sitecare_maintenance_render_contact_email_field',
@@ -508,6 +615,14 @@ function sitecare_maintenance_register_settings() {
 		'sitecare_maintenance_render_footer_text_field',
 		'sitecare-maintenance-mode',
 		'sitecare_maintenance_contact_section'
+	);
+
+	add_settings_field(
+		'sitecare_maintenance_template_style',
+		esc_html__( 'Design Preset', 'sitecare-maintenance-mode' ),
+		'sitecare_maintenance_render_template_style_field',
+		'sitecare-maintenance-mode',
+		'sitecare_maintenance_templates_section'
 	);
 
 	add_settings_field(
@@ -558,8 +673,6 @@ function sitecare_maintenance_register_settings() {
 		'sitecare_maintenance_bypass_section'
 	);
 }
-add_action( 'admin_init', 'sitecare_maintenance_register_settings' );
-
 /**
  * Loads admin assets on this plugin's settings page.
  *
@@ -588,6 +701,29 @@ function sitecare_maintenance_enqueue_admin_assets( $hook_suffix ) {
 		.sitecare-maintenance-admin-page .form-table td { padding-right: 18px; }
 		.sitecare-maintenance-role-list { margin: 0; }
 		.sitecare-maintenance-role-list li { margin: 0 0 8px; }
+		.sitecare-maintenance-template-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; max-width: 720px; align-items: stretch; }
+		.sitecare-maintenance-template-card { display: flex; flex-direction: column; min-width: 0; height: 100%; margin: 0; padding: 12px; border: 1px solid #dcdcde; border-radius: 6px; background: #fff; cursor: pointer; box-sizing: border-box; }
+		.sitecare-maintenance-template-card.is-selected { border-color: #2271b1; box-shadow: 0 0 0 1px #2271b1; }
+		.sitecare-maintenance-template-card input { margin-right: 6px; }
+		.sitecare-maintenance-template-name { display: inline-block; margin-bottom: 8px; font-weight: 600; }
+		.sitecare-maintenance-template-card p { margin: 8px 0 0; line-height: 1.45; }
+		.sitecare-maintenance-template-preview { width: 100%; height: 92px; margin-bottom: 10px; padding: 12px; border: 1px solid #dcdcde; border-radius: 4px; background: #f6f7f7; box-sizing: border-box; }
+		.sitecare-maintenance-preview-logo { width: 28px; height: 10px; margin: 0 auto 10px; border-radius: 10px; background: #8c8f94; }
+		.sitecare-maintenance-preview-title { width: 70%; height: 10px; margin: 0 auto 8px; border-radius: 10px; background: #1d2327; }
+		.sitecare-maintenance-preview-line { width: 88%; height: 7px; margin: 0 auto 6px; border-radius: 10px; background: #a7aaad; }
+		.sitecare-maintenance-preview-line.is-short { width: 54%; }
+		.sitecare-maintenance-preview-buttons { display: flex; justify-content: center; gap: 5px; margin-top: 10px; }
+		.sitecare-maintenance-preview-buttons span { width: 32px; height: 9px; border-radius: 10px; background: #72aee6; }
+		.sitecare-maintenance-template-preview.is-classic { border-top: 4px solid #2271b1; background: linear-gradient(180deg, #ffffff, #f6f7f7); }
+		.sitecare-maintenance-template-preview.is-center-card { padding: 10px; border-color: #1d2327; background: linear-gradient(135deg, #1d2327, #3858e9); }
+		.sitecare-maintenance-preview-card { height: 70px; padding: 11px; border-radius: 7px; background: #fff; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14); box-sizing: border-box; }
+		.sitecare-maintenance-template-preview.is-minimal { border-color: #c3c4c7; background: #fff; }
+		.sitecare-maintenance-template-preview.is-center-card .sitecare-maintenance-preview-title { background: #111827; }
+		.sitecare-maintenance-template-preview.is-center-card .sitecare-maintenance-preview-line { background: #9ca3af; }
+		.sitecare-maintenance-template-preview.is-minimal .sitecare-maintenance-preview-logo { display: none; }
+		.sitecare-maintenance-template-preview.is-minimal .sitecare-maintenance-preview-title,
+		.sitecare-maintenance-template-preview.is-minimal .sitecare-maintenance-preview-line { margin-left: 0; margin-right: 0; }
+		@media (max-width: 960px) { .sitecare-maintenance-template-choices { grid-template-columns: 1fr; max-width: 360px; } }
 		.sitecare-maintenance-actions-panel { margin-top: 24px; padding: 16px 18px; background: #fff; border: 1px solid #dcdcde; }
 		.sitecare-maintenance-actions-panel h2 { margin-top: 0; padding-top: 0; border-top: 0; }'
 	);
@@ -659,8 +795,10 @@ function sitecare_maintenance_enqueue_admin_assets( $hook_suffix ) {
 					var fields = {
 						"sitecare-maintenance-title": defaults.title,
 						"sitecare-maintenance-message": defaults.message,
+						"sitecare-maintenance-custom-html": "",
 						"sitecare-maintenance-schedule-start": "",
 						"sitecare-maintenance-schedule-end": "",
+						"sitecare-maintenance-countdown-target": "",
 						"sitecare-maintenance-contact-email": "",
 						"sitecare-maintenance-contact-phone": "",
 						"sitecare-maintenance-facebook-url": "",
@@ -675,10 +813,13 @@ function sitecare_maintenance_enqueue_admin_assets( $hook_suffix ) {
 
 					var enabledField = document.getElementById("sitecare-maintenance-enabled");
 					var scheduleEnabledField = document.getElementById("sitecare-maintenance-schedule-enabled");
+					var countdownEnabledField = document.getElementById("sitecare-maintenance-countdown-enabled");
+					var customHtmlEnabledField = document.getElementById("sitecare-maintenance-custom-html-enabled");
 					var logoIdField = document.getElementById("sitecare-maintenance-logo-id");
 					var logoPreview = document.getElementById("sitecare-maintenance-logo-preview");
 					var logoRemoveButton = document.getElementById("sitecare-maintenance-logo-remove");
 					var bypassRoleFields = document.querySelectorAll(".sitecare-maintenance-bypass-role");
+					var templateStyleFields = document.querySelectorAll(".sitecare-maintenance-template-style");
 
 					if (enabledField) {
 						enabledField.checked = false;
@@ -686,6 +827,14 @@ function sitecare_maintenance_enqueue_admin_assets( $hook_suffix ) {
 
 					if (scheduleEnabledField) {
 						scheduleEnabledField.checked = false;
+					}
+
+					if (countdownEnabledField) {
+						countdownEnabledField.checked = false;
+					}
+
+					if (customHtmlEnabledField) {
+						customHtmlEnabledField.checked = false;
 					}
 
 					Object.keys(fields).forEach(function(fieldId) {
@@ -715,8 +864,18 @@ function sitecare_maintenance_enqueue_admin_assets( $hook_suffix ) {
 					bypassRoleFields.forEach(function(field) {
 						field.checked = "administrator" === field.value;
 					});
+
+					templateStyleFields.forEach(function(field) {
+						field.checked = defaults.template_style === field.value;
+						field.closest(".sitecare-maintenance-template-card").classList.toggle("is-selected", field.checked);
+					});
 				});
 			}
+
+			$(".sitecare-maintenance-template-style").on("change", function() {
+				$(".sitecare-maintenance-template-card").removeClass("is-selected");
+				$(this).closest(".sitecare-maintenance-template-card").addClass("is-selected");
+			});
 
 			var scheduleEnabled = document.getElementById("sitecare-maintenance-schedule-enabled");
 			var scheduleStart = document.getElementById("sitecare-maintenance-schedule-start");
@@ -767,8 +926,6 @@ function sitecare_maintenance_enqueue_admin_assets( $hook_suffix ) {
 		});'
 	);
 }
-add_action( 'admin_enqueue_scripts', 'sitecare_maintenance_enqueue_admin_assets' );
-
 /**
  * Adds the plugin settings page under Settings.
  *
@@ -783,8 +940,6 @@ function sitecare_maintenance_add_admin_menu() {
 		'sitecare_maintenance_render_settings_page'
 	);
 }
-add_action( 'admin_menu', 'sitecare_maintenance_add_admin_menu' );
-
 /**
  * Replaces the generic Settings API success flag with a plugin-specific flag.
  *
@@ -810,8 +965,6 @@ function sitecare_maintenance_filter_settings_redirect( $location ) {
 
 	return add_query_arg( 'sitecare_maintenance_saved', '1', $location );
 }
-add_filter( 'wp_redirect', 'sitecare_maintenance_filter_settings_redirect' );
-
 /**
  * Renders admin success notices for this settings page.
  *
@@ -841,7 +994,55 @@ function sitecare_maintenance_render_admin_notices() {
 	</div>
 	<?php
 }
-add_action( 'admin_notices', 'sitecare_maintenance_render_admin_notices' );
+
+/**
+ * Adds a red maintenance status item to the WordPress admin bar.
+ *
+ * @param WP_Admin_Bar $wp_admin_bar Admin bar instance.
+ * @return void
+ */
+function sitecare_maintenance_add_admin_bar_status( $wp_admin_bar ) {
+	if ( ! is_user_logged_in() || ! current_user_can( 'manage_options' ) || ! sitecare_maintenance_is_enabled() ) {
+		return;
+	}
+
+	$wp_admin_bar->add_node(
+		array(
+			'id'    => 'sitecare-maintenance-status',
+			'title' => esc_html__( 'Maintenance Mode ON', 'sitecare-maintenance-mode' ),
+			'href'  => admin_url( 'options-general.php?page=sitecare-maintenance-mode' ),
+			'meta'  => array(
+				'class' => 'sitecare-maintenance-admin-bar-status',
+			),
+		)
+	);
+}
+
+/**
+ * Prints admin bar status styles on admin and frontend screens.
+ *
+ * @return void
+ */
+function sitecare_maintenance_print_admin_bar_status_styles() {
+	if ( ! is_user_logged_in() || ! current_user_can( 'manage_options' ) || ! sitecare_maintenance_is_enabled() ) {
+		return;
+	}
+	?>
+	<style>
+		#wpadminbar #wp-admin-bar-sitecare-maintenance-status > .ab-item {
+			background: #b32d2e;
+			color: #fff;
+			font-weight: 700;
+		}
+
+		#wpadminbar #wp-admin-bar-sitecare-maintenance-status > .ab-item:hover,
+		#wpadminbar #wp-admin-bar-sitecare-maintenance-status > .ab-item:focus {
+			background: #8a2424;
+			color: #fff;
+		}
+	</style>
+	<?php
+}
 
 /**
  * Renders the General section description.
@@ -858,7 +1059,7 @@ function sitecare_maintenance_render_general_intro() {
  * @return void
  */
 function sitecare_maintenance_render_content_intro() {
-	echo '<p>' . esc_html__( 'Control the main text visitors see on the maintenance page.', 'sitecare-maintenance-mode' ) . '</p>';
+	echo '<p>' . esc_html__( 'Control the main text visitors see on the maintenance page. The countdown timer is optional and does not turn maintenance mode off automatically.', 'sitecare-maintenance-mode' ) . '</p>';
 }
 
 /**
@@ -868,6 +1069,15 @@ function sitecare_maintenance_render_content_intro() {
  */
 function sitecare_maintenance_render_contact_intro() {
 	echo '<p>' . esc_html__( 'Add optional ways for visitors to contact you while the site is offline. Empty fields are hidden automatically.', 'sitecare-maintenance-mode' ) . '</p>';
+}
+
+/**
+ * Renders the Templates section description.
+ *
+ * @return void
+ */
+function sitecare_maintenance_render_templates_intro() {
+	echo '<p>' . esc_html__( 'Choose a built-in design style. Presets use your saved title, message, logo, countdown, contact details, and footer text.', 'sitecare-maintenance-mode' ) . '</p>';
 }
 
 /**
@@ -1063,6 +1273,53 @@ function sitecare_maintenance_render_footer_text_field() {
 }
 
 /**
+ * Renders the template style choices.
+ *
+ * @return void
+ */
+function sitecare_maintenance_render_template_style_field() {
+	$options         = sitecare_maintenance_get_options();
+	$template_styles = sitecare_maintenance_get_template_styles();
+	$current         = $options['template_style'];
+	?>
+	<div class="sitecare-maintenance-template-choices">
+		<?php foreach ( $template_styles as $template_key => $template ) : ?>
+			<label class="sitecare-maintenance-template-card <?php echo esc_attr( $current === $template_key ? 'is-selected' : '' ); ?>" for="<?php echo esc_attr( 'sitecare-maintenance-template-' . $template_key ); ?>">
+				<div class="<?php echo esc_attr( 'sitecare-maintenance-template-preview is-' . $template_key ); ?>" aria-hidden="true">
+					<?php if ( 'center-card' === $template_key ) : ?>
+						<div class="sitecare-maintenance-preview-card">
+					<?php endif; ?>
+					<div class="sitecare-maintenance-preview-logo"></div>
+					<div class="sitecare-maintenance-preview-title"></div>
+					<div class="sitecare-maintenance-preview-line"></div>
+					<div class="sitecare-maintenance-preview-line is-short"></div>
+					<?php if ( 'classic' === $template_key || 'center-card' === $template_key ) : ?>
+						<div class="sitecare-maintenance-preview-buttons">
+							<span></span>
+							<span></span>
+						</div>
+					<?php endif; ?>
+					<?php if ( 'center-card' === $template_key ) : ?>
+						</div>
+					<?php endif; ?>
+				</div>
+				<input
+					type="radio"
+					class="sitecare-maintenance-template-style"
+					id="<?php echo esc_attr( 'sitecare-maintenance-template-' . $template_key ); ?>"
+					name="<?php echo esc_attr( SITECARE_MAINTENANCE_OPTION ); ?>[template_style]"
+					value="<?php echo esc_attr( $template_key ); ?>"
+					<?php checked( $current, $template_key ); ?>
+				/>
+				<span class="sitecare-maintenance-template-name"><?php echo esc_html( $template['label'] ); ?></span>
+				<p class="description"><?php echo esc_html( $template['description'] ); ?></p>
+			</label>
+		<?php endforeach; ?>
+	</div>
+	<?php
+}
+
+/**
  * Renders the logo upload field.
  *
  * @return void
@@ -1123,6 +1380,100 @@ function sitecare_maintenance_render_background_color_field() {
 	/>
 	<p class="description">
 		<?php esc_html_e( 'Choose the background color shown behind the maintenance page content.', 'sitecare-maintenance-mode' ); ?>
+	</p>
+	<?php
+}
+
+/**
+ * Renders the custom HTML enable checkbox.
+ *
+ * @return void
+ */
+function sitecare_maintenance_render_custom_html_enabled_field() {
+	$options = sitecare_maintenance_get_options();
+	?>
+	<label for="sitecare-maintenance-custom-html-enabled">
+		<input
+			type="checkbox"
+			id="sitecare-maintenance-custom-html-enabled"
+			name="<?php echo esc_attr( SITECARE_MAINTENANCE_OPTION ); ?>[custom_html_enabled]"
+			value="1"
+			<?php checked( 1, (int) $options['custom_html_enabled'] ); ?>
+		/>
+		<?php esc_html_e( 'Enable custom HTML content', 'sitecare-maintenance-mode' ); ?>
+	</label>
+	<p class="description">
+		<?php esc_html_e( 'Use your own safe HTML instead of the built-in preset content. When enabled, only your custom HTML content is shown on the maintenance page.', 'sitecare-maintenance-mode' ); ?>
+	</p>
+	<?php
+}
+
+/**
+ * Renders the custom HTML textarea.
+ *
+ * @return void
+ */
+function sitecare_maintenance_render_custom_html_field() {
+	$options = sitecare_maintenance_get_options();
+	?>
+	<textarea
+		id="sitecare-maintenance-custom-html"
+		class="large-text code"
+		rows="7"
+		name="<?php echo esc_attr( SITECARE_MAINTENANCE_OPTION ); ?>[custom_html]"
+	><?php echo esc_textarea( $options['custom_html'] ); ?></textarea>
+	<p class="description">
+		<?php esc_html_e( 'Allowed examples include paragraphs, lists, links, bold text, and emphasis. Scripts, iframes, forms, and unsafe markup are removed when settings are saved.', 'sitecare-maintenance-mode' ); ?>
+	</p>
+	<?php
+}
+
+/**
+ * Renders the countdown enable checkbox.
+ *
+ * @return void
+ */
+function sitecare_maintenance_render_countdown_enabled_field() {
+	$options = sitecare_maintenance_get_options();
+	?>
+	<label for="sitecare-maintenance-countdown-enabled">
+		<input
+			type="checkbox"
+			id="sitecare-maintenance-countdown-enabled"
+			name="<?php echo esc_attr( SITECARE_MAINTENANCE_OPTION ); ?>[countdown_enabled]"
+			value="1"
+			<?php checked( 1, (int) $options['countdown_enabled'] ); ?>
+		/>
+		<?php esc_html_e( 'Enable countdown timer', 'sitecare-maintenance-mode' ); ?>
+	</label>
+	<p class="description">
+		<?php esc_html_e( 'Shows a visual countdown when the target date/time is valid and still in the future. It does not automatically disable maintenance mode.', 'sitecare-maintenance-mode' ); ?>
+	</p>
+	<?php
+}
+
+/**
+ * Renders the countdown target datetime field.
+ *
+ * @return void
+ */
+function sitecare_maintenance_render_countdown_target_field() {
+	$options = sitecare_maintenance_get_options();
+	?>
+	<input
+		type="datetime-local"
+		id="sitecare-maintenance-countdown-target"
+		name="<?php echo esc_attr( SITECARE_MAINTENANCE_OPTION ); ?>[countdown_target]"
+		value="<?php echo esc_attr( $options['countdown_target'] ); ?>"
+	/>
+	<p class="description">
+		<?php
+		printf(
+			/* translators: %s: WordPress timezone string. */
+			esc_html__( 'Choose the time the visual countdown should count toward. Times use the WordPress site timezone: %s.', 'sitecare-maintenance-mode' ),
+			esc_html( sitecare_maintenance_get_timezone_label() )
+		);
+		?>
 	</p>
 	<?php
 }
@@ -1516,6 +1867,42 @@ function sitecare_maintenance_get_layout_max_width( $layout_width ) {
 }
 
 /**
+ * Gets the CSS class for the selected frontend template.
+ *
+ * @param string $template_style Saved template key.
+ * @return string
+ */
+function sitecare_maintenance_get_template_class( $template_style ) {
+	$template_styles = sitecare_maintenance_get_template_styles();
+
+	if ( ! array_key_exists( $template_style, $template_styles ) ) {
+		$template_style = sitecare_maintenance_default_options()['template_style'];
+	}
+
+	return 'sitecare-template-' . $template_style;
+}
+
+/**
+ * Gets a future countdown target timestamp.
+ *
+ * @param array $options Plugin options.
+ * @return int|null
+ */
+function sitecare_maintenance_get_countdown_target_timestamp( $options ) {
+	if ( empty( $options['countdown_enabled'] ) ) {
+		return null;
+	}
+
+	$target_timestamp = sitecare_maintenance_schedule_datetime_to_timestamp( $options['countdown_target'] );
+
+	if ( null === $target_timestamp || $target_timestamp <= current_datetime()->getTimestamp() ) {
+		return null;
+	}
+
+	return $target_timestamp;
+}
+
+/**
  * Sends headers for the visitor-facing maintenance response.
  *
  * A 503 status tells search engines the site is temporarily unavailable, not
@@ -1641,10 +2028,14 @@ function sitecare_maintenance_render_page( $status_code = 503 ) {
 	$options = sitecare_maintenance_get_options();
 	$title   = sitecare_maintenance_format_page_text( $options['title'] );
 	$message = sitecare_maintenance_format_page_text( $options['message'] );
+	$custom_html = ! empty( $options['custom_html_enabled'] ) ? trim( $options['custom_html'] ) : '';
+	$has_custom_html_override = ( '' !== $custom_html );
 	$social_links = sitecare_maintenance_get_social_links( $options );
 	$has_contact  = ! empty( $options['contact_email'] ) || ! empty( $options['contact_phone'] ) || ! empty( $social_links );
 	$logo_url     = ! empty( $options['logo_attachment_id'] ) ? wp_get_attachment_image_url( absint( $options['logo_attachment_id'] ), 'medium' ) : '';
 	$max_width    = sitecare_maintenance_get_layout_max_width( $options['layout_width'] );
+	$template_class = sitecare_maintenance_get_template_class( $options['template_style'] );
+	$countdown_timestamp = sitecare_maintenance_get_countdown_target_timestamp( $options );
 
 	wp_enqueue_style( 'dashicons' );
 	wp_enqueue_style(
@@ -1672,60 +2063,145 @@ function sitecare_maintenance_render_page( $status_code = 503 ) {
 			}
 		</style>
 	</head>
-	<body class="sitecare-maintenance-body">
+	<body class="<?php echo esc_attr( 'sitecare-maintenance-body ' . ( $has_custom_html_override ? 'sitecare-custom-html-mode' : $template_class ) ); ?>">
 		<main class="sitecare-maintenance-page">
-			<?php if ( ! empty( $logo_url ) ) : ?>
-				<img
-					class="sitecare-maintenance-logo"
-					src="<?php echo esc_url( $logo_url ); ?>"
-					alt="<?php echo esc_attr( sprintf( __( '%s logo', 'sitecare-maintenance-mode' ), get_bloginfo( 'name' ) ) ); ?>"
-				/>
-			<?php endif; ?>
-			<h1><?php echo esc_html( $title ); ?></h1>
-			<p class="sitecare-maintenance-message"><?php echo esc_html( $message ); ?></p>
-			<?php if ( $has_contact ) : ?>
-				<section class="sitecare-maintenance-contact" aria-labelledby="sitecare-maintenance-contact-heading">
-					<h2 id="sitecare-maintenance-contact-heading"><?php esc_html_e( 'Contact Us', 'sitecare-maintenance-mode' ); ?></h2>
-					<?php if ( ! empty( $options['contact_email'] ) || ! empty( $options['contact_phone'] ) ) : ?>
-						<ul class="sitecare-maintenance-contact-list">
-							<?php if ( ! empty( $options['contact_email'] ) ) : ?>
-								<li>
-									<a href="mailto:<?php echo esc_attr( $options['contact_email'] ); ?>">
-										<span class="dashicons dashicons-email" aria-hidden="true"></span>
-										<span><?php echo esc_html( $options['contact_email'] ); ?></span>
-									</a>
-								</li>
-							<?php endif; ?>
-							<?php if ( ! empty( $options['contact_phone'] ) ) : ?>
-								<li>
-									<a href="tel:<?php echo esc_attr( preg_replace( '/[^0-9+]/', '', $options['contact_phone'] ) ); ?>">
-										<span class="dashicons dashicons-phone" aria-hidden="true"></span>
-										<span><?php echo esc_html( $options['contact_phone'] ); ?></span>
-									</a>
-								</li>
-							<?php endif; ?>
-						</ul>
-					<?php endif; ?>
-					<?php if ( ! empty( $social_links ) ) : ?>
-						<ul class="sitecare-maintenance-social-list">
-							<?php foreach ( $social_links as $social_link ) : ?>
-								<li>
-									<a href="<?php echo esc_url( $social_link['url'] ); ?>" target="_blank" rel="noopener noreferrer">
-										<span class="dashicons <?php echo esc_attr( $social_link['icon'] ); ?>" aria-hidden="true"></span>
-										<span><?php echo esc_html( $social_link['label'] ); ?></span>
-									</a>
-								</li>
-							<?php endforeach; ?>
-						</ul>
-					<?php endif; ?>
-				</section>
-			<?php endif; ?>
-			<?php if ( ! empty( $options['footer_text'] ) ) : ?>
-				<footer class="sitecare-maintenance-footer">
-					<?php echo esc_html( sitecare_maintenance_format_page_text( $options['footer_text'] ) ); ?>
-				</footer>
+			<?php if ( $has_custom_html_override ) : ?>
+				<div class="sitecare-maintenance-custom-html">
+					<?php echo wp_kses_post( $custom_html ); ?>
+				</div>
+			<?php else : ?>
+				<?php if ( ! empty( $logo_url ) ) : ?>
+					<img
+						class="sitecare-maintenance-logo"
+						src="<?php echo esc_url( $logo_url ); ?>"
+						alt="<?php echo esc_attr( sprintf( __( '%s logo', 'sitecare-maintenance-mode' ), get_bloginfo( 'name' ) ) ); ?>"
+					/>
+				<?php endif; ?>
+				<h1><?php echo esc_html( $title ); ?></h1>
+				<p class="sitecare-maintenance-message"><?php echo esc_html( $message ); ?></p>
+				<?php if ( null !== $countdown_timestamp ) : ?>
+					<section
+						class="sitecare-maintenance-countdown"
+						data-countdown-target="<?php echo esc_attr( $countdown_timestamp * 1000 ); ?>"
+						aria-label="<?php esc_attr_e( 'Maintenance countdown', 'sitecare-maintenance-mode' ); ?>"
+					>
+						<p class="sitecare-maintenance-countdown-fallback">
+							<?php esc_html_e( 'Maintenance is scheduled to finish soon.', 'sitecare-maintenance-mode' ); ?>
+						</p>
+						<div class="sitecare-maintenance-countdown-units" hidden>
+							<span>
+								<strong data-countdown-days>0</strong>
+								<?php esc_html_e( 'Days', 'sitecare-maintenance-mode' ); ?>
+							</span>
+							<span>
+								<strong data-countdown-hours>0</strong>
+								<?php esc_html_e( 'Hours', 'sitecare-maintenance-mode' ); ?>
+							</span>
+							<span>
+								<strong data-countdown-minutes>0</strong>
+								<?php esc_html_e( 'Minutes', 'sitecare-maintenance-mode' ); ?>
+							</span>
+							<span>
+								<strong data-countdown-seconds>0</strong>
+								<?php esc_html_e( 'Seconds', 'sitecare-maintenance-mode' ); ?>
+							</span>
+						</div>
+					</section>
+				<?php endif; ?>
+				<?php if ( $has_contact ) : ?>
+					<section class="sitecare-maintenance-contact" aria-labelledby="sitecare-maintenance-contact-heading">
+						<h2 id="sitecare-maintenance-contact-heading"><?php esc_html_e( 'Contact Us', 'sitecare-maintenance-mode' ); ?></h2>
+						<?php if ( ! empty( $options['contact_email'] ) || ! empty( $options['contact_phone'] ) ) : ?>
+							<ul class="sitecare-maintenance-contact-list">
+								<?php if ( ! empty( $options['contact_email'] ) ) : ?>
+									<li>
+										<a href="mailto:<?php echo esc_attr( $options['contact_email'] ); ?>">
+											<span class="dashicons dashicons-email" aria-hidden="true"></span>
+											<span><?php echo esc_html( $options['contact_email'] ); ?></span>
+										</a>
+									</li>
+								<?php endif; ?>
+								<?php if ( ! empty( $options['contact_phone'] ) ) : ?>
+									<li>
+										<a href="tel:<?php echo esc_attr( preg_replace( '/[^0-9+]/', '', $options['contact_phone'] ) ); ?>">
+											<span class="dashicons dashicons-phone" aria-hidden="true"></span>
+											<span><?php echo esc_html( $options['contact_phone'] ); ?></span>
+										</a>
+									</li>
+								<?php endif; ?>
+							</ul>
+						<?php endif; ?>
+						<?php if ( ! empty( $social_links ) ) : ?>
+							<ul class="sitecare-maintenance-social-list">
+								<?php foreach ( $social_links as $social_link ) : ?>
+									<li>
+										<a href="<?php echo esc_url( $social_link['url'] ); ?>" target="_blank" rel="noopener noreferrer">
+											<span class="dashicons <?php echo esc_attr( $social_link['icon'] ); ?>" aria-hidden="true"></span>
+											<span><?php echo esc_html( $social_link['label'] ); ?></span>
+										</a>
+									</li>
+								<?php endforeach; ?>
+							</ul>
+						<?php endif; ?>
+					</section>
+				<?php endif; ?>
+				<?php if ( ! empty( $options['footer_text'] ) ) : ?>
+					<footer class="sitecare-maintenance-footer">
+						<?php echo esc_html( sitecare_maintenance_format_page_text( $options['footer_text'] ) ); ?>
+					</footer>
+				<?php endif; ?>
 			<?php endif; ?>
 		</main>
+		<?php if ( ! $has_custom_html_override && null !== $countdown_timestamp ) : ?>
+			<script>
+				(function() {
+					var countdown = document.querySelector(".sitecare-maintenance-countdown");
+
+					if (!countdown) {
+						return;
+					}
+
+					var target = parseInt(countdown.getAttribute("data-countdown-target"), 10);
+					var fallback = countdown.querySelector(".sitecare-maintenance-countdown-fallback");
+					var units = countdown.querySelector(".sitecare-maintenance-countdown-units");
+					var days = countdown.querySelector("[data-countdown-days]");
+					var hours = countdown.querySelector("[data-countdown-hours]");
+					var minutes = countdown.querySelector("[data-countdown-minutes]");
+					var seconds = countdown.querySelector("[data-countdown-seconds]");
+
+					function updateCountdown() {
+						var remaining = Math.max(0, target - Date.now());
+
+						if (0 === remaining) {
+							countdown.style.display = "none";
+							return;
+						}
+
+						var totalSeconds = Math.floor(remaining / 1000);
+						var totalDays = Math.floor(totalSeconds / 86400);
+						var totalHours = Math.floor((totalSeconds % 86400) / 3600);
+						var totalMinutes = Math.floor((totalSeconds % 3600) / 60);
+						var visibleSeconds = totalSeconds % 60;
+
+						days.textContent = totalDays;
+						hours.textContent = totalHours;
+						minutes.textContent = totalMinutes;
+						seconds.textContent = visibleSeconds;
+
+						if (fallback) {
+							fallback.hidden = true;
+						}
+
+						if (units) {
+							units.hidden = false;
+						}
+					}
+
+					updateCountdown();
+					window.setInterval(updateCountdown, 1000);
+				}());
+			</script>
+		<?php endif; ?>
 	</body>
 	</html>
 	<?php
@@ -1756,4 +2232,4 @@ function sitecare_maintenance_maybe_render_page() {
 
 	sitecare_maintenance_render_page( 503 );
 }
-add_action( 'template_redirect', 'sitecare_maintenance_maybe_render_page' );
+sitecare_maintenance_plugin()->run();
