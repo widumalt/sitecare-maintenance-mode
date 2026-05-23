@@ -14,7 +14,7 @@ A beginner-friendly WordPress maintenance mode plugin.
 
 SiteCare Maintenance Mode helps WordPress administrators show visitors a simple maintenance or offline page while site work is in progress.
 
-This MVP version adds basic admin settings for enabling or disabling maintenance mode, customizing the maintenance page text, showing optional visitor contact details, applying simple branding, and previewing the maintenance page. When enabled, logged-out visitors see a simple maintenance page, while administrators can continue viewing the normal site.
+This MVP version adds basic admin settings for enabling or disabling maintenance mode, customizing the maintenance page text, showing optional visitor contact details, applying simple branding, previewing the maintenance page, and resetting the visible settings form to defaults. When enabled, logged-out visitors see a simple maintenance page, while administrators can continue viewing the normal site.
 
 Future phases may add templates and custom HTML.
 
@@ -33,9 +33,25 @@ For local development, this project is intended to be linked into the LocalWP si
 
 Yes. Administrators can enable or disable maintenance mode from the WordPress admin settings page.
 
+= What can I customize? =
+
+You can customize the maintenance page title, message, contact email, phone number, social links, footer text, logo, background color, text color, and layout width.
+
+= Can I preview the maintenance page? =
+
+Yes. Administrators can use the protected preview button on the settings page without enabling maintenance mode for visitors.
+
+= Can I reset the settings? =
+
+Yes. The settings page includes a reset button that changes the visible form fields back to defaults. Those values are not saved until you click Save Settings.
+
 = Does this plugin create database tables? =
 
 No. The plugin uses the WordPress Options API and does not create custom database tables.
+
+= What happens when I uninstall the plugin? =
+
+The plugin deletes its `sitecare_maintenance_options` option. It does not delete anything else.
 
 = Can I use this on a live site now? =
 
@@ -53,6 +69,8 @@ This version is for development and learning. Test it carefully before using it 
 * Added optional email, phone, social link, and footer text fields.
 * Added logo, color, and layout width settings.
 * Added protected maintenance page preview mode for administrators.
+* Added reset settings button for restoring visible form fields to defaults before saving.
+* Added uninstall cleanup for the plugin option.
 * Added a simple visitor-facing maintenance page.
 * Added administrator bypass for users with the manage_options capability.
 
