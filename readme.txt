@@ -14,7 +14,7 @@ A beginner-friendly WordPress maintenance mode plugin.
 
 SiteCare Maintenance Mode helps WordPress administrators show visitors a simple maintenance or offline page while site work is in progress.
 
-This MVP version adds a basic admin setting for enabling or disabling maintenance mode. When enabled, logged-out visitors see a simple maintenance page, while administrators can continue viewing the normal site.
+This MVP version adds basic admin settings for enabling or disabling maintenance mode and customizing the maintenance page text. When enabled, logged-out visitors see a simple maintenance page, while administrators can continue viewing the normal site.
 
 Future phases may add templates, contact details, custom HTML, and preview mode.
 
@@ -49,6 +49,7 @@ This version is for development and learning. Test it carefully before using it 
 * Added basic activation and deactivation hooks.
 * Added a basic admin settings page.
 * Added a maintenance mode enable/disable checkbox.
+* Added editable maintenance page title and message fields.
 * Added a simple visitor-facing maintenance page.
 * Added administrator bypass for users with the manage_options capability.
 

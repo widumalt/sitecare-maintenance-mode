@@ -45,8 +45,8 @@ define( 'SITECARE_MAINTENANCE_OPTION', 'sitecare_maintenance_options' );
 /**
  * Runs when the plugin is activated.
  *
- * Phase 1 does not create database tables or save settings. This callback is
- * intentionally minimal so activation stays safe while the skeleton is tested.
+ * The plugin stores a small option array with safe defaults. It does not create
+ * custom database tables.
  *
  * @return void
  */
@@ -60,8 +60,8 @@ function sitecare_maintenance_activate() {
 /**
  * Runs when the plugin is deactivated.
  *
- * Phase 1 does not register cron jobs, rewrite rules, or other persistent
- * behavior, so there is nothing to clean up yet.
+ * The plugin does not register cron jobs, rewrite rules, or other persistent
+ * behavior, so there is nothing to clean up on deactivation.
  *
  * @return void
  */
@@ -80,6 +80,8 @@ register_deactivation_hook( __FILE__, 'sitecare_maintenance_deactivate' );
 function sitecare_maintenance_default_options() {
 	return array(
 		'enabled' => 0,
+		'title'   => 'We will be back soon.',
+		'message' => '{site name} is temporarily offline for maintenance. Please check back later.',
 	);
 }
 
@@ -110,9 +112,24 @@ function sitecare_maintenance_sanitize_options( $input ) {
 	}
 
 	$input = is_array( $input ) ? $input : array();
+	$defaults = sitecare_maintenance_default_options();
+	$input    = wp_parse_args( $input, $defaults );
+
+	$title   = sanitize_text_field( $input['title'] );
+	$message = sanitize_textarea_field( $input['message'] );
+
+	if ( '' === trim( $title ) ) {
+		$title = $defaults['title'];
+	}
+
+	if ( '' === trim( $message ) ) {
+		$message = $defaults['message'];
+	}
 
 	return array(
 		'enabled' => empty( $input['enabled'] ) ? 0 : 1,
+		'title'   => $title,
+		'message' => $message,
 	);
 }
 
@@ -143,6 +160,22 @@ function sitecare_maintenance_register_settings() {
 		'sitecare_maintenance_enabled',
 		esc_html__( 'Status', 'sitecare-maintenance-mode' ),
 		'sitecare_maintenance_render_enabled_field',
+		'sitecare-maintenance-mode',
+		'sitecare_maintenance_main_section'
+	);
+
+	add_settings_field(
+		'sitecare_maintenance_title',
+		esc_html__( 'Page Title', 'sitecare-maintenance-mode' ),
+		'sitecare_maintenance_render_title_field',
+		'sitecare-maintenance-mode',
+		'sitecare_maintenance_main_section'
+	);
+
+	add_settings_field(
+		'sitecare_maintenance_message',
+		esc_html__( 'Message', 'sitecare-maintenance-mode' ),
+		'sitecare_maintenance_render_message_field',
 		'sitecare-maintenance-mode',
 		'sitecare_maintenance_main_section'
 	);
@@ -199,6 +232,47 @@ function sitecare_maintenance_render_enabled_field() {
 }
 
 /**
+ * Renders the maintenance page title field.
+ *
+ * @return void
+ */
+function sitecare_maintenance_render_title_field() {
+	$options = sitecare_maintenance_get_options();
+	?>
+	<input
+		type="text"
+		id="sitecare-maintenance-title"
+		class="regular-text"
+		name="<?php echo esc_attr( SITECARE_MAINTENANCE_OPTION ); ?>[title]"
+		value="<?php echo esc_attr( $options['title'] ); ?>"
+	/>
+	<p class="description">
+		<?php esc_html_e( 'This appears as the main heading on the maintenance page.', 'sitecare-maintenance-mode' ); ?>
+	</p>
+	<?php
+}
+
+/**
+ * Renders the maintenance page message field.
+ *
+ * @return void
+ */
+function sitecare_maintenance_render_message_field() {
+	$options = sitecare_maintenance_get_options();
+	?>
+	<textarea
+		id="sitecare-maintenance-message"
+		class="large-text"
+		rows="5"
+		name="<?php echo esc_attr( SITECARE_MAINTENANCE_OPTION ); ?>[message]"
+	><?php echo esc_textarea( $options['message'] ); ?></textarea>
+	<p class="description">
+		<?php esc_html_e( 'Use {site name} to automatically show the WordPress site name.', 'sitecare-maintenance-mode' ); ?>
+	</p>
+	<?php
+}
+
+/**
  * Renders the plugin settings page.
  *
  * @return void
@@ -230,6 +304,16 @@ function sitecare_maintenance_is_enabled() {
 	$options = sitecare_maintenance_get_options();
 
 	return ! empty( $options['enabled'] );
+}
+
+/**
+ * Replaces supported placeholders in maintenance page text.
+ *
+ * @param string $text Raw saved text.
+ * @return string
+ */
+function sitecare_maintenance_format_page_text( $text ) {
+	return str_replace( '{site name}', get_bloginfo( 'name' ), $text );
 }
 
 /**
@@ -281,14 +365,16 @@ function sitecare_maintenance_maybe_render_page() {
 	nocache_headers();
 	header( 'Retry-After: 3600' );
 
-	$site_name = get_bloginfo( 'name' );
+	$options = sitecare_maintenance_get_options();
+	$title   = sitecare_maintenance_format_page_text( $options['title'] );
+	$message = sitecare_maintenance_format_page_text( $options['message'] );
 	?>
 	<!doctype html>
 	<html <?php language_attributes(); ?>>
 	<head>
 		<meta charset="<?php echo esc_attr( get_bloginfo( 'charset' ) ); ?>">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<title><?php echo esc_html( sprintf( __( '%s is under maintenance', 'sitecare-maintenance-mode' ), $site_name ) ); ?></title>
+		<title><?php echo esc_html( $title ); ?></title>
 		<style>
 			body {
 				margin: 0;
@@ -318,18 +404,8 @@ function sitecare_maintenance_maybe_render_page() {
 	</head>
 	<body>
 		<main class="sitecare-maintenance-page">
-			<h1><?php esc_html_e( 'We will be back soon.', 'sitecare-maintenance-mode' ); ?></h1>
-			<p>
-				<?php
-				echo esc_html(
-					sprintf(
-						/* translators: %s: Site name. */
-						__( '%s is temporarily offline for maintenance. Please check back later.', 'sitecare-maintenance-mode' ),
-						$site_name
-					)
-				);
-				?>
-			</p>
+			<h1><?php echo esc_html( $title ); ?></h1>
+			<p><?php echo esc_html( $message ); ?></p>
 		</main>
 	</body>
 	</html>
