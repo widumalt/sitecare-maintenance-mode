@@ -79,9 +79,15 @@ register_deactivation_hook( __FILE__, 'sitecare_maintenance_deactivate' );
  */
 function sitecare_maintenance_default_options() {
 	return array(
-		'enabled' => 0,
-		'title'   => 'We will be back soon.',
-		'message' => '{site name} is temporarily offline for maintenance. Please check back later.',
+		'enabled'        => 0,
+		'title'          => 'We will be back soon.',
+		'message'        => '{site name} is temporarily offline for maintenance. Please check back later.',
+		'contact_email'  => '',
+		'contact_phone'  => '',
+		'facebook_url'   => '',
+		'instagram_url'  => '',
+		'linkedin_url'   => '',
+		'footer_text'    => '',
 	);
 }
 
@@ -127,9 +133,15 @@ function sitecare_maintenance_sanitize_options( $input ) {
 	}
 
 	return array(
-		'enabled' => empty( $input['enabled'] ) ? 0 : 1,
-		'title'   => $title,
-		'message' => $message,
+		'enabled'        => empty( $input['enabled'] ) ? 0 : 1,
+		'title'          => $title,
+		'message'        => $message,
+		'contact_email'  => sanitize_email( $input['contact_email'] ),
+		'contact_phone'  => sanitize_text_field( $input['contact_phone'] ),
+		'facebook_url'   => esc_url_raw( $input['facebook_url'] ),
+		'instagram_url'  => esc_url_raw( $input['instagram_url'] ),
+		'linkedin_url'   => esc_url_raw( $input['linkedin_url'] ),
+		'footer_text'    => sanitize_text_field( $input['footer_text'] ),
 	);
 }
 
@@ -176,6 +188,54 @@ function sitecare_maintenance_register_settings() {
 		'sitecare_maintenance_message',
 		esc_html__( 'Message', 'sitecare-maintenance-mode' ),
 		'sitecare_maintenance_render_message_field',
+		'sitecare-maintenance-mode',
+		'sitecare_maintenance_main_section'
+	);
+
+	add_settings_field(
+		'sitecare_maintenance_contact_email',
+		esc_html__( 'Contact Email', 'sitecare-maintenance-mode' ),
+		'sitecare_maintenance_render_contact_email_field',
+		'sitecare-maintenance-mode',
+		'sitecare_maintenance_main_section'
+	);
+
+	add_settings_field(
+		'sitecare_maintenance_contact_phone',
+		esc_html__( 'Contact Phone', 'sitecare-maintenance-mode' ),
+		'sitecare_maintenance_render_contact_phone_field',
+		'sitecare-maintenance-mode',
+		'sitecare_maintenance_main_section'
+	);
+
+	add_settings_field(
+		'sitecare_maintenance_facebook_url',
+		esc_html__( 'Facebook URL', 'sitecare-maintenance-mode' ),
+		'sitecare_maintenance_render_facebook_url_field',
+		'sitecare-maintenance-mode',
+		'sitecare_maintenance_main_section'
+	);
+
+	add_settings_field(
+		'sitecare_maintenance_instagram_url',
+		esc_html__( 'Instagram URL', 'sitecare-maintenance-mode' ),
+		'sitecare_maintenance_render_instagram_url_field',
+		'sitecare-maintenance-mode',
+		'sitecare_maintenance_main_section'
+	);
+
+	add_settings_field(
+		'sitecare_maintenance_linkedin_url',
+		esc_html__( 'LinkedIn URL', 'sitecare-maintenance-mode' ),
+		'sitecare_maintenance_render_linkedin_url_field',
+		'sitecare-maintenance-mode',
+		'sitecare_maintenance_main_section'
+	);
+
+	add_settings_field(
+		'sitecare_maintenance_footer_text',
+		esc_html__( 'Footer Text', 'sitecare-maintenance-mode' ),
+		'sitecare_maintenance_render_footer_text_field',
 		'sitecare-maintenance-mode',
 		'sitecare_maintenance_main_section'
 	);
@@ -273,6 +333,115 @@ function sitecare_maintenance_render_message_field() {
 }
 
 /**
+ * Renders a text input for a contact setting.
+ *
+ * @param string $field_id Field ID suffix.
+ * @param string $option_key Option array key.
+ * @param string $type Input type.
+ * @param string $description Help text.
+ * @return void
+ */
+function sitecare_maintenance_render_text_input( $field_id, $option_key, $type, $description ) {
+	$options = sitecare_maintenance_get_options();
+	?>
+	<input
+		type="<?php echo esc_attr( $type ); ?>"
+		id="<?php echo esc_attr( 'sitecare-maintenance-' . $field_id ); ?>"
+		class="regular-text"
+		name="<?php echo esc_attr( SITECARE_MAINTENANCE_OPTION ); ?>[<?php echo esc_attr( $option_key ); ?>]"
+		value="<?php echo esc_attr( $options[ $option_key ] ); ?>"
+	/>
+	<?php if ( '' !== $description ) : ?>
+		<p class="description"><?php echo esc_html( $description ); ?></p>
+	<?php endif; ?>
+	<?php
+}
+
+/**
+ * Renders the contact email field.
+ *
+ * @return void
+ */
+function sitecare_maintenance_render_contact_email_field() {
+	sitecare_maintenance_render_text_input(
+		'contact-email',
+		'contact_email',
+		'email',
+		__( 'Displayed as a clickable email link when provided.', 'sitecare-maintenance-mode' )
+	);
+}
+
+/**
+ * Renders the contact phone field.
+ *
+ * @return void
+ */
+function sitecare_maintenance_render_contact_phone_field() {
+	sitecare_maintenance_render_text_input(
+		'contact-phone',
+		'contact_phone',
+		'text',
+		__( 'Displayed as a clickable phone link when provided.', 'sitecare-maintenance-mode' )
+	);
+}
+
+/**
+ * Renders the Facebook URL field.
+ *
+ * @return void
+ */
+function sitecare_maintenance_render_facebook_url_field() {
+	sitecare_maintenance_render_text_input(
+		'facebook-url',
+		'facebook_url',
+		'url',
+		__( 'Displayed as a Facebook icon link when provided.', 'sitecare-maintenance-mode' )
+	);
+}
+
+/**
+ * Renders the Instagram URL field.
+ *
+ * @return void
+ */
+function sitecare_maintenance_render_instagram_url_field() {
+	sitecare_maintenance_render_text_input(
+		'instagram-url',
+		'instagram_url',
+		'url',
+		__( 'Displayed as an Instagram icon link when provided.', 'sitecare-maintenance-mode' )
+	);
+}
+
+/**
+ * Renders the LinkedIn URL field.
+ *
+ * @return void
+ */
+function sitecare_maintenance_render_linkedin_url_field() {
+	sitecare_maintenance_render_text_input(
+		'linkedin-url',
+		'linkedin_url',
+		'url',
+		__( 'Displayed as a LinkedIn icon link when provided.', 'sitecare-maintenance-mode' )
+	);
+}
+
+/**
+ * Renders the footer text field.
+ *
+ * @return void
+ */
+function sitecare_maintenance_render_footer_text_field() {
+	sitecare_maintenance_render_text_input(
+		'footer-text',
+		'footer_text',
+		'text',
+		__( 'Displayed below the contact section when provided.', 'sitecare-maintenance-mode' )
+	);
+}
+
+/**
  * Renders the plugin settings page.
  *
  * @return void
@@ -314,6 +483,45 @@ function sitecare_maintenance_is_enabled() {
  */
 function sitecare_maintenance_format_page_text( $text ) {
 	return str_replace( '{site name}', get_bloginfo( 'name' ), $text );
+}
+
+/**
+ * Builds the social links that have been provided.
+ *
+ * @param array $options Plugin options.
+ * @return array
+ */
+function sitecare_maintenance_get_social_links( $options ) {
+	$platforms = array(
+		'facebook_url'  => array(
+			'label' => __( 'Facebook', 'sitecare-maintenance-mode' ),
+			'icon'  => 'dashicons-facebook-alt',
+		),
+		'instagram_url' => array(
+			'label' => __( 'Instagram', 'sitecare-maintenance-mode' ),
+			'icon'  => 'dashicons-instagram',
+		),
+		'linkedin_url'  => array(
+			'label' => __( 'LinkedIn', 'sitecare-maintenance-mode' ),
+			'icon'  => 'dashicons-linkedin',
+		),
+	);
+
+	$links = array();
+
+	foreach ( $platforms as $option_key => $platform ) {
+		if ( empty( $options[ $option_key ] ) ) {
+			continue;
+		}
+
+		$links[] = array(
+			'url'   => $options[ $option_key ],
+			'label' => $platform['label'],
+			'icon'  => $platform['icon'],
+		);
+	}
+
+	return $links;
 }
 
 /**
@@ -368,6 +576,8 @@ function sitecare_maintenance_maybe_render_page() {
 	$options = sitecare_maintenance_get_options();
 	$title   = sitecare_maintenance_format_page_text( $options['title'] );
 	$message = sitecare_maintenance_format_page_text( $options['message'] );
+	$social_links = sitecare_maintenance_get_social_links( $options );
+	$has_contact  = ! empty( $options['contact_email'] ) || ! empty( $options['contact_phone'] ) || ! empty( $social_links );
 	?>
 	<!doctype html>
 	<html <?php language_attributes(); ?>>
@@ -375,6 +585,7 @@ function sitecare_maintenance_maybe_render_page() {
 		<meta charset="<?php echo esc_attr( get_bloginfo( 'charset' ) ); ?>">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title><?php echo esc_html( $title ); ?></title>
+		<link rel="stylesheet" href="<?php echo esc_url( includes_url( 'css/dashicons.min.css' ) ); ?>">
 		<style>
 			body {
 				margin: 0;
@@ -400,12 +611,94 @@ function sitecare_maintenance_maybe_render_page() {
 				margin: 0;
 				font-size: 18px;
 			}
+			.sitecare-maintenance-contact {
+				margin-top: 28px;
+				padding-top: 24px;
+				border-top: 1px solid #dcdcde;
+			}
+			.sitecare-maintenance-contact h2 {
+				margin: 0 0 12px;
+				font-size: 20px;
+			}
+			.sitecare-maintenance-contact-list,
+			.sitecare-maintenance-social-list {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 12px;
+				justify-content: center;
+				margin: 0;
+				padding: 0;
+				list-style: none;
+			}
+			.sitecare-maintenance-contact-list a,
+			.sitecare-maintenance-social-list a {
+				display: inline-flex;
+				align-items: center;
+				gap: 6px;
+				color: #2271b1;
+				text-decoration: none;
+			}
+			.sitecare-maintenance-contact-list a:hover,
+			.sitecare-maintenance-social-list a:hover {
+				color: #135e96;
+				text-decoration: underline;
+			}
+			.sitecare-maintenance-social-list {
+				margin-top: 14px;
+			}
+			.sitecare-maintenance-footer {
+				margin-top: 24px;
+				font-size: 14px;
+				color: #646970;
+			}
 		</style>
 	</head>
 	<body>
 		<main class="sitecare-maintenance-page">
 			<h1><?php echo esc_html( $title ); ?></h1>
 			<p><?php echo esc_html( $message ); ?></p>
+			<?php if ( $has_contact ) : ?>
+				<section class="sitecare-maintenance-contact" aria-labelledby="sitecare-maintenance-contact-heading">
+					<h2 id="sitecare-maintenance-contact-heading"><?php esc_html_e( 'Contact Us', 'sitecare-maintenance-mode' ); ?></h2>
+					<?php if ( ! empty( $options['contact_email'] ) || ! empty( $options['contact_phone'] ) ) : ?>
+						<ul class="sitecare-maintenance-contact-list">
+							<?php if ( ! empty( $options['contact_email'] ) ) : ?>
+								<li>
+									<a href="mailto:<?php echo esc_attr( $options['contact_email'] ); ?>">
+										<span class="dashicons dashicons-email" aria-hidden="true"></span>
+										<span><?php echo esc_html( $options['contact_email'] ); ?></span>
+									</a>
+								</li>
+							<?php endif; ?>
+							<?php if ( ! empty( $options['contact_phone'] ) ) : ?>
+								<li>
+									<a href="tel:<?php echo esc_attr( preg_replace( '/[^0-9+]/', '', $options['contact_phone'] ) ); ?>">
+										<span class="dashicons dashicons-phone" aria-hidden="true"></span>
+										<span><?php echo esc_html( $options['contact_phone'] ); ?></span>
+									</a>
+								</li>
+							<?php endif; ?>
+						</ul>
+					<?php endif; ?>
+					<?php if ( ! empty( $social_links ) ) : ?>
+						<ul class="sitecare-maintenance-social-list">
+							<?php foreach ( $social_links as $social_link ) : ?>
+								<li>
+									<a href="<?php echo esc_url( $social_link['url'] ); ?>" target="_blank" rel="noopener noreferrer">
+										<span class="dashicons <?php echo esc_attr( $social_link['icon'] ); ?>" aria-hidden="true"></span>
+										<span><?php echo esc_html( $social_link['label'] ); ?></span>
+									</a>
+								</li>
+							<?php endforeach; ?>
+						</ul>
+					<?php endif; ?>
+				</section>
+			<?php endif; ?>
+			<?php if ( ! empty( $options['footer_text'] ) ) : ?>
+				<footer class="sitecare-maintenance-footer">
+					<?php echo esc_html( sitecare_maintenance_format_page_text( $options['footer_text'] ) ); ?>
+				</footer>
+			<?php endif; ?>
 		</main>
 	</body>
 	</html>
