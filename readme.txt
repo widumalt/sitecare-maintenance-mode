@@ -72,6 +72,7 @@ This version is for development and learning. Test it carefully before using it 
 * Added reset settings button for restoring visible form fields to defaults before saving.
 * Added uninstall cleanup for the plugin option.
 * Improved maintenance page spacing, mobile responsiveness, and contact/social link styling.
+* Improved admin settings page organization, helper text, and maintenance status notices.
 * Added a simple visitor-facing maintenance page.
 * Added administrator bypass for users with the manage_options capability.
 
