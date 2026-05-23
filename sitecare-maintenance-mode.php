@@ -701,6 +701,8 @@ function sitecare_maintenance_render_settings_page() {
 	if ( ! current_user_can( 'manage_options' ) ) {
 		wp_die( esc_html__( 'You do not have permission to access this page.', 'sitecare-maintenance-mode' ) );
 	}
+
+	$preview_url = sitecare_maintenance_get_preview_url();
 	?>
 	<div class="wrap">
 		<h1><?php esc_html_e( 'SiteCare Maintenance Mode', 'sitecare-maintenance-mode' ); ?></h1>
@@ -711,6 +713,11 @@ function sitecare_maintenance_render_settings_page() {
 			submit_button( esc_html__( 'Save Settings', 'sitecare-maintenance-mode' ) );
 			?>
 		</form>
+		<p>
+			<a class="button button-secondary" href="<?php echo esc_url( $preview_url ); ?>" target="_blank" rel="noopener noreferrer">
+				<?php esc_html_e( 'Preview Maintenance Page', 'sitecare-maintenance-mode' ); ?>
+			</a>
+		</p>
 	</div>
 	<?php
 }
@@ -734,6 +741,49 @@ function sitecare_maintenance_is_enabled() {
  */
 function sitecare_maintenance_format_page_text( $text ) {
 	return str_replace( '{site name}', get_bloginfo( 'name' ), $text );
+}
+
+/**
+ * Builds a protected URL for previewing the maintenance page.
+ *
+ * @return string
+ */
+function sitecare_maintenance_get_preview_url() {
+	$preview_url = add_query_arg(
+		'sitecare_maintenance_preview',
+		'1',
+		home_url( '/' )
+	);
+
+	return wp_nonce_url(
+		$preview_url,
+		'sitecare_maintenance_preview',
+		'sitecare_maintenance_preview_nonce'
+	);
+}
+
+/**
+ * Checks whether the current request is asking for preview mode.
+ *
+ * @return bool
+ */
+function sitecare_maintenance_is_preview_request() {
+	return isset( $_GET['sitecare_maintenance_preview'] );
+}
+
+/**
+ * Verifies the preview nonce from the current request.
+ *
+ * @return bool
+ */
+function sitecare_maintenance_has_valid_preview_nonce() {
+	if ( ! isset( $_GET['sitecare_maintenance_preview_nonce'] ) ) {
+		return false;
+	}
+
+	$nonce = sanitize_text_field( wp_unslash( $_GET['sitecare_maintenance_preview_nonce'] ) );
+
+	return (bool) wp_verify_nonce( $nonce, 'sitecare_maintenance_preview' );
 }
 
 /**
@@ -827,18 +877,20 @@ function sitecare_maintenance_should_bypass() {
 }
 
 /**
- * Shows the maintenance page to normal frontend visitors when enabled.
+ * Renders the maintenance page layout.
  *
+ * @param int $status_code HTTP status code to send.
  * @return void
  */
-function sitecare_maintenance_maybe_render_page() {
-	if ( ! sitecare_maintenance_is_enabled() || sitecare_maintenance_should_bypass() ) {
-		return;
-	}
+function sitecare_maintenance_render_page( $status_code = 503 ) {
+	$status_code = absint( $status_code );
 
-	status_header( 503 );
+	status_header( $status_code );
 	nocache_headers();
-	header( 'Retry-After: 3600' );
+
+	if ( 503 === $status_code ) {
+		header( 'Retry-After: 3600' );
+	}
 
 	$options = sitecare_maintenance_get_options();
 	$title   = sitecare_maintenance_format_page_text( $options['title'] );
@@ -990,5 +1042,30 @@ function sitecare_maintenance_maybe_render_page() {
 	</html>
 	<?php
 	exit;
+}
+
+/**
+ * Shows the maintenance page to preview users or normal frontend visitors.
+ *
+ * @return void
+ */
+function sitecare_maintenance_maybe_render_page() {
+	if ( sitecare_maintenance_is_preview_request() ) {
+		if ( ! current_user_can( 'manage_options' ) || ! sitecare_maintenance_has_valid_preview_nonce() ) {
+			wp_die(
+				esc_html__( 'You do not have permission to preview the maintenance page.', 'sitecare-maintenance-mode' ),
+				esc_html__( 'Preview not allowed', 'sitecare-maintenance-mode' ),
+				array( 'response' => 403 )
+			);
+		}
+
+		sitecare_maintenance_render_page( 200 );
+	}
+
+	if ( ! sitecare_maintenance_is_enabled() || sitecare_maintenance_should_bypass() ) {
+		return;
+	}
+
+	sitecare_maintenance_render_page( 503 );
 }
 add_action( 'template_redirect', 'sitecare_maintenance_maybe_render_page' );
