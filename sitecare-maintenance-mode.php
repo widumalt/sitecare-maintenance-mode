@@ -79,15 +79,41 @@ register_deactivation_hook( __FILE__, 'sitecare_maintenance_deactivate' );
  */
 function sitecare_maintenance_default_options() {
 	return array(
-		'enabled'        => 0,
-		'title'          => 'We will be back soon.',
-		'message'        => '{site name} is temporarily offline for maintenance. Please check back later.',
-		'contact_email'  => '',
-		'contact_phone'  => '',
-		'facebook_url'   => '',
-		'instagram_url'  => '',
-		'linkedin_url'   => '',
-		'footer_text'    => '',
+		'enabled'            => 0,
+		'title'              => 'We will be back soon.',
+		'message'            => '{site name} is temporarily offline for maintenance. Please check back later.',
+		'contact_email'      => '',
+		'contact_phone'      => '',
+		'facebook_url'       => '',
+		'instagram_url'      => '',
+		'linkedin_url'       => '',
+		'footer_text'        => '',
+		'logo_attachment_id' => 0,
+		'background_color'   => '#f5f5f5',
+		'text_color'         => '#111111',
+		'layout_width'       => 'medium',
+	);
+}
+
+/**
+ * Gets allowed layout width choices.
+ *
+ * @return array
+ */
+function sitecare_maintenance_get_layout_widths() {
+	return array(
+		'narrow' => array(
+			'label'     => __( 'Narrow', 'sitecare-maintenance-mode' ),
+			'max_width' => '480px',
+		),
+		'medium' => array(
+			'label'     => __( 'Medium', 'sitecare-maintenance-mode' ),
+			'max_width' => '640px',
+		),
+		'wide'   => array(
+			'label'     => __( 'Wide', 'sitecare-maintenance-mode' ),
+			'max_width' => '820px',
+		),
 	);
 }
 
@@ -132,16 +158,37 @@ function sitecare_maintenance_sanitize_options( $input ) {
 		$message = $defaults['message'];
 	}
 
+	$background_color = sanitize_hex_color( $input['background_color'] );
+	$text_color       = sanitize_hex_color( $input['text_color'] );
+	$layout_widths    = sitecare_maintenance_get_layout_widths();
+	$layout_width     = sanitize_key( $input['layout_width'] );
+
+	if ( empty( $background_color ) ) {
+		$background_color = $defaults['background_color'];
+	}
+
+	if ( empty( $text_color ) ) {
+		$text_color = $defaults['text_color'];
+	}
+
+	if ( ! array_key_exists( $layout_width, $layout_widths ) ) {
+		$layout_width = $defaults['layout_width'];
+	}
+
 	return array(
-		'enabled'        => empty( $input['enabled'] ) ? 0 : 1,
-		'title'          => $title,
-		'message'        => $message,
-		'contact_email'  => sanitize_email( $input['contact_email'] ),
-		'contact_phone'  => sanitize_text_field( $input['contact_phone'] ),
-		'facebook_url'   => esc_url_raw( $input['facebook_url'] ),
-		'instagram_url'  => esc_url_raw( $input['instagram_url'] ),
-		'linkedin_url'   => esc_url_raw( $input['linkedin_url'] ),
-		'footer_text'    => sanitize_text_field( $input['footer_text'] ),
+		'enabled'            => empty( $input['enabled'] ) ? 0 : 1,
+		'title'              => $title,
+		'message'            => $message,
+		'contact_email'      => sanitize_email( $input['contact_email'] ),
+		'contact_phone'      => sanitize_text_field( $input['contact_phone'] ),
+		'facebook_url'       => esc_url_raw( $input['facebook_url'] ),
+		'instagram_url'      => esc_url_raw( $input['instagram_url'] ),
+		'linkedin_url'       => esc_url_raw( $input['linkedin_url'] ),
+		'footer_text'        => sanitize_text_field( $input['footer_text'] ),
+		'logo_attachment_id' => absint( $input['logo_attachment_id'] ),
+		'background_color'   => $background_color,
+		'text_color'         => $text_color,
+		'layout_width'       => $layout_width,
 	);
 }
 
@@ -239,8 +286,111 @@ function sitecare_maintenance_register_settings() {
 		'sitecare-maintenance-mode',
 		'sitecare_maintenance_main_section'
 	);
+
+	add_settings_field(
+		'sitecare_maintenance_logo',
+		esc_html__( 'Logo', 'sitecare-maintenance-mode' ),
+		'sitecare_maintenance_render_logo_field',
+		'sitecare-maintenance-mode',
+		'sitecare_maintenance_main_section'
+	);
+
+	add_settings_field(
+		'sitecare_maintenance_background_color',
+		esc_html__( 'Background Color', 'sitecare-maintenance-mode' ),
+		'sitecare_maintenance_render_background_color_field',
+		'sitecare-maintenance-mode',
+		'sitecare_maintenance_main_section'
+	);
+
+	add_settings_field(
+		'sitecare_maintenance_text_color',
+		esc_html__( 'Text Color', 'sitecare-maintenance-mode' ),
+		'sitecare_maintenance_render_text_color_field',
+		'sitecare-maintenance-mode',
+		'sitecare_maintenance_main_section'
+	);
+
+	add_settings_field(
+		'sitecare_maintenance_layout_width',
+		esc_html__( 'Layout Width', 'sitecare-maintenance-mode' ),
+		'sitecare_maintenance_render_layout_width_field',
+		'sitecare-maintenance-mode',
+		'sitecare_maintenance_main_section'
+	);
 }
 add_action( 'admin_init', 'sitecare_maintenance_register_settings' );
+
+/**
+ * Loads admin assets on this plugin's settings page.
+ *
+ * @param string $hook_suffix Current admin page hook suffix.
+ * @return void
+ */
+function sitecare_maintenance_enqueue_admin_assets( $hook_suffix ) {
+	if ( 'settings_page_sitecare-maintenance-mode' !== $hook_suffix ) {
+		return;
+	}
+
+	wp_enqueue_media();
+	wp_enqueue_style( 'wp-color-picker' );
+	wp_enqueue_script( 'wp-color-picker' );
+
+	$script_data = array(
+		'title'      => __( 'Choose Logo', 'sitecare-maintenance-mode' ),
+		'buttonText' => __( 'Use this logo', 'sitecare-maintenance-mode' ),
+	);
+
+	wp_add_inline_script(
+		'wp-color-picker',
+		'jQuery(function($) {
+			$(".sitecare-maintenance-color-field").wpColorPicker();
+
+			var mediaFrame;
+			var strings = ' . wp_json_encode( $script_data ) . ';
+
+			$("#sitecare-maintenance-logo-upload").on("click", function(event) {
+				event.preventDefault();
+
+				if (mediaFrame) {
+					mediaFrame.open();
+					return;
+				}
+
+				mediaFrame = wp.media({
+					title: strings.title,
+					button: {
+						text: strings.buttonText
+					},
+					multiple: false,
+					library: {
+						type: "image"
+					}
+				});
+
+				mediaFrame.on("select", function() {
+					var attachment = mediaFrame.state().get("selection").first().toJSON();
+					var previewUrl = attachment.sizes && attachment.sizes.thumbnail ? attachment.sizes.thumbnail.url : attachment.url;
+
+					$("#sitecare-maintenance-logo-id").val(attachment.id);
+					$("#sitecare-maintenance-logo-preview").attr("src", previewUrl).show();
+					$("#sitecare-maintenance-logo-remove").show();
+				});
+
+				mediaFrame.open();
+			});
+
+			$("#sitecare-maintenance-logo-remove").on("click", function(event) {
+				event.preventDefault();
+
+				$("#sitecare-maintenance-logo-id").val("0");
+				$("#sitecare-maintenance-logo-preview").attr("src", "").hide();
+				$(this).hide();
+			});
+		});'
+	);
+}
+add_action( 'admin_enqueue_scripts', 'sitecare_maintenance_enqueue_admin_assets' );
 
 /**
  * Adds the plugin settings page under Settings.
@@ -442,6 +592,107 @@ function sitecare_maintenance_render_footer_text_field() {
 }
 
 /**
+ * Renders the logo upload field.
+ *
+ * @return void
+ */
+function sitecare_maintenance_render_logo_field() {
+	$options  = sitecare_maintenance_get_options();
+	$logo_id  = absint( $options['logo_attachment_id'] );
+	$logo_url = $logo_id ? wp_get_attachment_image_url( $logo_id, 'thumbnail' ) : '';
+	?>
+	<input
+		type="hidden"
+		id="sitecare-maintenance-logo-id"
+		name="<?php echo esc_attr( SITECARE_MAINTENANCE_OPTION ); ?>[logo_attachment_id]"
+		value="<?php echo esc_attr( $logo_id ); ?>"
+	/>
+	<p>
+		<img
+			id="sitecare-maintenance-logo-preview"
+			src="<?php echo esc_url( $logo_url ); ?>"
+			alt="<?php esc_attr_e( 'Selected logo preview', 'sitecare-maintenance-mode' ); ?>"
+			style="max-width: 160px; height: auto; <?php echo empty( $logo_url ) ? 'display: none;' : ''; ?>"
+		/>
+	</p>
+	<p>
+		<button type="button" class="button" id="sitecare-maintenance-logo-upload">
+			<?php esc_html_e( 'Select Logo', 'sitecare-maintenance-mode' ); ?>
+		</button>
+		<button
+			type="button"
+			class="button"
+			id="sitecare-maintenance-logo-remove"
+			style="<?php echo empty( $logo_url ) ? 'display: none;' : ''; ?>"
+		>
+			<?php esc_html_e( 'Remove Logo', 'sitecare-maintenance-mode' ); ?>
+		</button>
+	</p>
+	<p class="description">
+		<?php esc_html_e( 'Displayed above the maintenance page title when provided.', 'sitecare-maintenance-mode' ); ?>
+	</p>
+	<?php
+}
+
+/**
+ * Renders the background color field.
+ *
+ * @return void
+ */
+function sitecare_maintenance_render_background_color_field() {
+	$options = sitecare_maintenance_get_options();
+	?>
+	<input
+		type="text"
+		class="sitecare-maintenance-color-field"
+		name="<?php echo esc_attr( SITECARE_MAINTENANCE_OPTION ); ?>[background_color]"
+		value="<?php echo esc_attr( $options['background_color'] ); ?>"
+		data-default-color="#f5f5f5"
+	/>
+	<?php
+}
+
+/**
+ * Renders the text color field.
+ *
+ * @return void
+ */
+function sitecare_maintenance_render_text_color_field() {
+	$options = sitecare_maintenance_get_options();
+	?>
+	<input
+		type="text"
+		class="sitecare-maintenance-color-field"
+		name="<?php echo esc_attr( SITECARE_MAINTENANCE_OPTION ); ?>[text_color]"
+		value="<?php echo esc_attr( $options['text_color'] ); ?>"
+		data-default-color="#111111"
+	/>
+	<?php
+}
+
+/**
+ * Renders the layout width dropdown.
+ *
+ * @return void
+ */
+function sitecare_maintenance_render_layout_width_field() {
+	$options       = sitecare_maintenance_get_options();
+	$layout_widths = sitecare_maintenance_get_layout_widths();
+	?>
+	<select name="<?php echo esc_attr( SITECARE_MAINTENANCE_OPTION ); ?>[layout_width]" id="sitecare-maintenance-layout-width">
+		<?php foreach ( $layout_widths as $value => $layout ) : ?>
+			<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $options['layout_width'], $value ); ?>>
+				<?php echo esc_html( $layout['label'] ); ?>
+			</option>
+		<?php endforeach; ?>
+	</select>
+	<p class="description">
+		<?php esc_html_e( 'Controls the maximum width of the maintenance page content.', 'sitecare-maintenance-mode' ); ?>
+	</p>
+	<?php
+}
+
+/**
  * Renders the plugin settings page.
  *
  * @return void
@@ -525,6 +776,22 @@ function sitecare_maintenance_get_social_links( $options ) {
 }
 
 /**
+ * Gets the frontend max-width value for the selected layout.
+ *
+ * @param string $layout_width Saved layout width key.
+ * @return string
+ */
+function sitecare_maintenance_get_layout_max_width( $layout_width ) {
+	$layout_widths = sitecare_maintenance_get_layout_widths();
+
+	if ( ! array_key_exists( $layout_width, $layout_widths ) ) {
+		$layout_width = sitecare_maintenance_default_options()['layout_width'];
+	}
+
+	return $layout_widths[ $layout_width ]['max_width'];
+}
+
+/**
  * Decides whether the current request should bypass maintenance mode.
  *
  * @return bool
@@ -578,6 +845,8 @@ function sitecare_maintenance_maybe_render_page() {
 	$message = sitecare_maintenance_format_page_text( $options['message'] );
 	$social_links = sitecare_maintenance_get_social_links( $options );
 	$has_contact  = ! empty( $options['contact_email'] ) || ! empty( $options['contact_phone'] ) || ! empty( $social_links );
+	$logo_url     = ! empty( $options['logo_attachment_id'] ) ? wp_get_attachment_image_url( absint( $options['logo_attachment_id'] ), 'medium' ) : '';
+	$max_width    = sitecare_maintenance_get_layout_max_width( $options['layout_width'] );
 	?>
 	<!doctype html>
 	<html <?php language_attributes(); ?>>
@@ -593,23 +862,33 @@ function sitecare_maintenance_maybe_render_page() {
 				display: flex;
 				align-items: center;
 				justify-content: center;
-				background: #f6f7f7;
-				color: #1d2327;
+				background: <?php echo esc_attr( $options['background_color'] ); ?>;
+				color: <?php echo esc_attr( $options['text_color'] ); ?>;
 				font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 				line-height: 1.5;
 			}
 			.sitecare-maintenance-page {
-				max-width: 640px;
+				max-width: <?php echo esc_attr( $max_width ); ?>;
 				padding: 32px;
 				text-align: center;
+			}
+			.sitecare-maintenance-logo {
+				display: block;
+				max-width: 180px;
+				max-height: 120px;
+				width: auto;
+				height: auto;
+				margin: 0 auto 24px;
 			}
 			.sitecare-maintenance-page h1 {
 				margin: 0 0 16px;
 				font-size: 32px;
+				color: <?php echo esc_attr( $options['text_color'] ); ?>;
 			}
 			.sitecare-maintenance-page p {
 				margin: 0;
 				font-size: 18px;
+				color: <?php echo esc_attr( $options['text_color'] ); ?>;
 			}
 			.sitecare-maintenance-contact {
 				margin-top: 28px;
@@ -649,12 +928,19 @@ function sitecare_maintenance_maybe_render_page() {
 			.sitecare-maintenance-footer {
 				margin-top: 24px;
 				font-size: 14px;
-				color: #646970;
+				color: <?php echo esc_attr( $options['text_color'] ); ?>;
 			}
 		</style>
 	</head>
 	<body>
 		<main class="sitecare-maintenance-page">
+			<?php if ( ! empty( $logo_url ) ) : ?>
+				<img
+					class="sitecare-maintenance-logo"
+					src="<?php echo esc_url( $logo_url ); ?>"
+					alt="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>"
+				/>
+			<?php endif; ?>
 			<h1><?php echo esc_html( $title ); ?></h1>
 			<p><?php echo esc_html( $message ); ?></p>
 			<?php if ( $has_contact ) : ?>
