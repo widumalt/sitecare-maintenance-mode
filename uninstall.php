@@ -10,8 +10,9 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 }
 
 /*
- * Phase 1 does not save plugin settings or create database tables.
+ * Phase 2 stores a small settings option for maintenance mode.
  *
- * Cleanup logic will be added in a later phase after the plugin starts storing
- * options. Until then, there is nothing to delete on uninstall.
+ * For now, uninstall cleanup is intentionally conservative and does not delete
+ * settings. A later phase can add a clear cleanup policy if the project needs
+ * complete data removal on uninstall.
  */

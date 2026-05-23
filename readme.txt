@@ -8,15 +8,15 @@ Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-A beginner-friendly WordPress maintenance mode plugin project.
+A beginner-friendly WordPress maintenance mode plugin.
 
 == Description ==
 
-SiteCare Maintenance Mode will help WordPress administrators show visitors a maintenance or offline page while site work is in progress.
+SiteCare Maintenance Mode helps WordPress administrators show visitors a simple maintenance or offline page while site work is in progress.
 
-This Phase 1 version is only a clean plugin skeleton. It is designed to appear in WordPress Admin > Plugins and activate safely without adding maintenance mode behavior yet.
+This MVP version adds a basic admin setting for enabling or disabling maintenance mode. When enabled, logged-out visitors see a simple maintenance page, while administrators can continue viewing the normal site.
 
-Future phases will add an admin toggle, visitor-facing maintenance page, administrator bypass, templates, contact details, custom HTML, and preview mode.
+Future phases may add templates, contact details, custom HTML, and preview mode.
 
 == Installation ==
 
@@ -31,15 +31,15 @@ For local development, this project is intended to be linked into the LocalWP si
 
 = Does this version enable maintenance mode? =
 
-No. Phase 1 only creates the plugin skeleton. Maintenance mode behavior will be added in a later phase.
+Yes. Administrators can enable or disable maintenance mode from the WordPress admin settings page.
 
 = Does this plugin create database tables? =
 
-No. The Phase 1 skeleton does not create database tables or save settings.
+No. The plugin uses the WordPress Options API and does not create custom database tables.
 
 = Can I use this on a live site now? =
 
-This version is for development and learning. It should activate safely, but it does not provide maintenance mode features yet.
+This version is for development and learning. Test it carefully before using it on a live site.
 
 == Changelog ==
 
@@ -47,7 +47,10 @@ This version is for development and learning. It should activate safely, but it 
 
 * Added the initial WordPress plugin skeleton.
 * Added basic activation and deactivation hooks.
-* Added project folders for future development.
+* Added a basic admin settings page.
+* Added a maintenance mode enable/disable checkbox.
+* Added a simple visitor-facing maintenance page.
+* Added administrator bypass for users with the manage_options capability.
 
 == License ==
 
