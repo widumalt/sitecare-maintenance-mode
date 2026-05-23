@@ -998,6 +998,14 @@ function sitecare_maintenance_render_page( $status_code = 503 ) {
 	$has_contact  = ! empty( $options['contact_email'] ) || ! empty( $options['contact_phone'] ) || ! empty( $social_links );
 	$logo_url     = ! empty( $options['logo_attachment_id'] ) ? wp_get_attachment_image_url( absint( $options['logo_attachment_id'] ), 'medium' ) : '';
 	$max_width    = sitecare_maintenance_get_layout_max_width( $options['layout_width'] );
+
+	wp_enqueue_style( 'dashicons' );
+	wp_enqueue_style(
+		'sitecare-maintenance-page',
+		SITECARE_MAINTENANCE_URL . 'assets/sitecare-maintenance.css',
+		array( 'dashicons' ),
+		SITECARE_MAINTENANCE_VERSION
+	);
 	?>
 	<!doctype html>
 	<html <?php language_attributes(); ?>>
@@ -1005,95 +1013,26 @@ function sitecare_maintenance_render_page( $status_code = 503 ) {
 		<meta charset="<?php echo esc_attr( get_bloginfo( 'charset' ) ); ?>">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title><?php echo esc_html( $title ); ?></title>
-		<link rel="stylesheet" href="<?php echo esc_url( includes_url( 'css/dashicons.min.css' ) ); ?>">
+		<?php wp_print_styles( array( 'dashicons', 'sitecare-maintenance-page' ) ); ?>
 		<style>
-			body {
-				margin: 0;
-				min-height: 100vh;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				background: <?php echo esc_attr( $options['background_color'] ); ?>;
-				color: <?php echo esc_attr( $options['text_color'] ); ?>;
-				font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-				line-height: 1.5;
-			}
-			.sitecare-maintenance-page {
-				max-width: <?php echo esc_attr( $max_width ); ?>;
-				padding: 32px;
-				text-align: center;
-			}
-			.sitecare-maintenance-logo {
-				display: block;
-				max-width: 180px;
-				max-height: 120px;
-				width: auto;
-				height: auto;
-				margin: 0 auto 24px;
-			}
-			.sitecare-maintenance-page h1 {
-				margin: 0 0 16px;
-				font-size: 32px;
-				color: <?php echo esc_attr( $options['text_color'] ); ?>;
-			}
-			.sitecare-maintenance-page p {
-				margin: 0;
-				font-size: 18px;
-				color: <?php echo esc_attr( $options['text_color'] ); ?>;
-			}
-			.sitecare-maintenance-contact {
-				margin-top: 28px;
-				padding-top: 24px;
-				border-top: 1px solid #dcdcde;
-			}
-			.sitecare-maintenance-contact h2 {
-				margin: 0 0 12px;
-				font-size: 20px;
-			}
-			.sitecare-maintenance-contact-list,
-			.sitecare-maintenance-social-list {
-				display: flex;
-				flex-wrap: wrap;
-				gap: 12px;
-				justify-content: center;
-				margin: 0;
-				padding: 0;
-				list-style: none;
-			}
-			.sitecare-maintenance-contact-list a,
-			.sitecare-maintenance-social-list a {
-				display: inline-flex;
-				align-items: center;
-				gap: 6px;
-				color: #2271b1;
-				text-decoration: none;
-			}
-			.sitecare-maintenance-contact-list a:hover,
-			.sitecare-maintenance-social-list a:hover {
-				color: #135e96;
-				text-decoration: underline;
-			}
-			.sitecare-maintenance-social-list {
-				margin-top: 14px;
-			}
-			.sitecare-maintenance-footer {
-				margin-top: 24px;
-				font-size: 14px;
-				color: <?php echo esc_attr( $options['text_color'] ); ?>;
+			:root {
+				--sitecare-maintenance-background: <?php echo esc_attr( $options['background_color'] ); ?>;
+				--sitecare-maintenance-text: <?php echo esc_attr( $options['text_color'] ); ?>;
+				--sitecare-maintenance-width: <?php echo esc_attr( $max_width ); ?>;
 			}
 		</style>
 	</head>
-	<body>
+	<body class="sitecare-maintenance-body">
 		<main class="sitecare-maintenance-page">
 			<?php if ( ! empty( $logo_url ) ) : ?>
 				<img
 					class="sitecare-maintenance-logo"
 					src="<?php echo esc_url( $logo_url ); ?>"
-					alt="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>"
+					alt="<?php echo esc_attr( sprintf( __( '%s logo', 'sitecare-maintenance-mode' ), get_bloginfo( 'name' ) ) ); ?>"
 				/>
 			<?php endif; ?>
 			<h1><?php echo esc_html( $title ); ?></h1>
-			<p><?php echo esc_html( $message ); ?></p>
+			<p class="sitecare-maintenance-message"><?php echo esc_html( $message ); ?></p>
 			<?php if ( $has_contact ) : ?>
 				<section class="sitecare-maintenance-contact" aria-labelledby="sitecare-maintenance-contact-heading">
 					<h2 id="sitecare-maintenance-contact-heading"><?php esc_html_e( 'Contact Us', 'sitecare-maintenance-mode' ); ?></h2>
