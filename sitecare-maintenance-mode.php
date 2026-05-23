@@ -80,6 +80,9 @@ register_deactivation_hook( __FILE__, 'sitecare_maintenance_deactivate' );
 function sitecare_maintenance_default_options() {
 	return array(
 		'enabled'            => 0,
+		'schedule_enabled'   => 0,
+		'schedule_start'     => '',
+		'schedule_end'       => '',
 		'title'              => __( 'We will be back soon.', 'sitecare-maintenance-mode' ),
 		'message'            => __( '{site name} is temporarily offline for maintenance. Please check back later.', 'sitecare-maintenance-mode' ),
 		'contact_email'      => '',
@@ -133,6 +136,75 @@ function sitecare_maintenance_get_options() {
 }
 
 /**
+ * Gets a readable WordPress timezone label for helper text.
+ *
+ * @return string
+ */
+function sitecare_maintenance_get_timezone_label() {
+	$timezone = wp_timezone_string();
+
+	if ( '' !== $timezone ) {
+		return $timezone;
+	}
+
+	return 'UTC';
+}
+
+/**
+ * Sanitizes a datetime-local value.
+ *
+ * The browser sends datetime-local values like 2026-05-23T14:30. The value is
+ * saved in that local format and later interpreted using the WordPress site
+ * timezone.
+ *
+ * @param string $value Raw datetime-local value.
+ * @return string
+ */
+function sitecare_maintenance_sanitize_schedule_datetime( $value ) {
+	$value = sanitize_text_field( $value );
+
+	if ( '' === $value ) {
+		return '';
+	}
+
+	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/', $value ) ) {
+		return '';
+	}
+
+	$date = DateTimeImmutable::createFromFormat( 'Y-m-d\TH:i', $value, wp_timezone() );
+	$errors = DateTimeImmutable::getLastErrors();
+
+	if ( false === $date || ( is_array( $errors ) && ( $errors['warning_count'] > 0 || $errors['error_count'] > 0 ) ) ) {
+		return '';
+	}
+
+	return $date->format( 'Y-m-d\TH:i' );
+}
+
+/**
+ * Converts a saved schedule value to a timestamp in the WordPress timezone.
+ *
+ * @param string $value Saved datetime-local value.
+ * @return int|null
+ */
+function sitecare_maintenance_schedule_datetime_to_timestamp( $value ) {
+	$value = sitecare_maintenance_sanitize_schedule_datetime( $value );
+
+	if ( '' === $value ) {
+		return null;
+	}
+
+	$date = DateTimeImmutable::createFromFormat( 'Y-m-d\TH:i', $value, wp_timezone() );
+	$errors = DateTimeImmutable::getLastErrors();
+
+	if ( false === $date || ( is_array( $errors ) && ( $errors['warning_count'] > 0 || $errors['error_count'] > 0 ) ) ) {
+		return null;
+	}
+
+	return $date->getTimestamp();
+}
+
+/**
  * Sanitizes plugin settings before WordPress saves them.
  *
  * @param array $input Raw settings input.
@@ -175,8 +247,38 @@ function sitecare_maintenance_sanitize_options( $input ) {
 		$layout_width = $defaults['layout_width'];
 	}
 
+	$schedule_enabled = empty( $input['schedule_enabled'] ) ? 0 : 1;
+	$schedule_start   = sitecare_maintenance_sanitize_schedule_datetime( $input['schedule_start'] );
+	$schedule_end     = sitecare_maintenance_sanitize_schedule_datetime( $input['schedule_end'] );
+
+	if ( $schedule_enabled ) {
+		$start_timestamp = sitecare_maintenance_schedule_datetime_to_timestamp( $schedule_start );
+		$end_timestamp   = sitecare_maintenance_schedule_datetime_to_timestamp( $schedule_end );
+
+		if ( null === $start_timestamp || null === $end_timestamp ) {
+			$schedule_enabled = 0;
+			add_settings_error(
+				SITECARE_MAINTENANCE_OPTION,
+				'sitecare_maintenance_schedule_missing_dates',
+				__( 'Scheduled maintenance was not enabled. Please choose both a valid start date/time and end date/time.', 'sitecare-maintenance-mode' ),
+				'error'
+			);
+		} elseif ( $end_timestamp <= $start_timestamp ) {
+			$schedule_enabled = 0;
+			add_settings_error(
+				SITECARE_MAINTENANCE_OPTION,
+				'sitecare_maintenance_schedule_invalid_range',
+				__( 'Scheduled maintenance was not enabled. The end date/time must be after the start date/time.', 'sitecare-maintenance-mode' ),
+				'error'
+			);
+		}
+	}
+
 	return array(
 		'enabled'            => empty( $input['enabled'] ) ? 0 : 1,
+		'schedule_enabled'   => $schedule_enabled,
+		'schedule_start'     => $schedule_start,
+		'schedule_end'       => $schedule_end,
 		'title'              => $title,
 		'message'            => $message,
 		'contact_email'      => sanitize_email( $input['contact_email'] ),
@@ -240,6 +342,30 @@ function sitecare_maintenance_register_settings() {
 		'sitecare_maintenance_enabled',
 		esc_html__( 'Status', 'sitecare-maintenance-mode' ),
 		'sitecare_maintenance_render_enabled_field',
+		'sitecare-maintenance-mode',
+		'sitecare_maintenance_general_section'
+	);
+
+	add_settings_field(
+		'sitecare_maintenance_schedule_enabled',
+		esc_html__( 'Scheduled Maintenance', 'sitecare-maintenance-mode' ),
+		'sitecare_maintenance_render_schedule_enabled_field',
+		'sitecare-maintenance-mode',
+		'sitecare_maintenance_general_section'
+	);
+
+	add_settings_field(
+		'sitecare_maintenance_schedule_start',
+		esc_html__( 'Start Date/Time', 'sitecare-maintenance-mode' ),
+		'sitecare_maintenance_render_schedule_start_field',
+		'sitecare-maintenance-mode',
+		'sitecare_maintenance_general_section'
+	);
+
+	add_settings_field(
+		'sitecare_maintenance_schedule_end',
+		esc_html__( 'End Date/Time', 'sitecare-maintenance-mode' ),
+		'sitecare_maintenance_render_schedule_end_field',
 		'sitecare-maintenance-mode',
 		'sitecare_maintenance_general_section'
 	);
@@ -376,6 +502,7 @@ function sitecare_maintenance_enqueue_admin_assets( $hook_suffix ) {
 		'title'        => __( 'Choose Logo', 'sitecare-maintenance-mode' ),
 		'buttonText'   => __( 'Use this logo', 'sitecare-maintenance-mode' ),
 		'confirmReset' => __( 'Are you sure you want to reset all SiteCare Maintenance settings to defaults? This will not be saved until you click Save Settings.', 'sitecare-maintenance-mode' ),
+		'invalidRange' => __( 'End Date/Time must be after Start Date/Time.', 'sitecare-maintenance-mode' ),
 		'defaults'     => sitecare_maintenance_default_options(),
 	);
 
@@ -438,6 +565,8 @@ function sitecare_maintenance_enqueue_admin_assets( $hook_suffix ) {
 					var fields = {
 						"sitecare-maintenance-title": defaults.title,
 						"sitecare-maintenance-message": defaults.message,
+						"sitecare-maintenance-schedule-start": "",
+						"sitecare-maintenance-schedule-end": "",
 						"sitecare-maintenance-contact-email": "",
 						"sitecare-maintenance-contact-phone": "",
 						"sitecare-maintenance-facebook-url": "",
@@ -450,12 +579,17 @@ function sitecare_maintenance_enqueue_admin_assets( $hook_suffix ) {
 					};
 
 					var enabledField = document.getElementById("sitecare-maintenance-enabled");
+					var scheduleEnabledField = document.getElementById("sitecare-maintenance-schedule-enabled");
 					var logoIdField = document.getElementById("sitecare-maintenance-logo-id");
 					var logoPreview = document.getElementById("sitecare-maintenance-logo-preview");
 					var logoRemoveButton = document.getElementById("sitecare-maintenance-logo-remove");
 
 					if (enabledField) {
 						enabledField.checked = false;
+					}
+
+					if (scheduleEnabledField) {
+						scheduleEnabledField.checked = false;
 					}
 
 					Object.keys(fields).forEach(function(fieldId) {
@@ -482,6 +616,53 @@ function sitecare_maintenance_enqueue_admin_assets( $hook_suffix ) {
 						logoRemoveButton.style.display = "none";
 					}
 				});
+			}
+
+			var scheduleEnabled = document.getElementById("sitecare-maintenance-schedule-enabled");
+			var scheduleStart = document.getElementById("sitecare-maintenance-schedule-start");
+			var scheduleEnd = document.getElementById("sitecare-maintenance-schedule-end");
+
+			function updateScheduleRequiredFields() {
+				var isRequired = scheduleEnabled && scheduleEnabled.checked;
+
+				if (scheduleStart) {
+					scheduleStart.required = isRequired;
+				}
+
+				if (scheduleEnd) {
+					scheduleEnd.required = isRequired;
+				}
+
+				validateScheduleRange();
+			}
+
+			function validateScheduleRange() {
+				if (!scheduleStart || !scheduleEnd) {
+					return;
+				}
+
+				scheduleEnd.setCustomValidity("");
+
+				if (!scheduleEnabled || !scheduleEnabled.checked || !scheduleStart.value || !scheduleEnd.value) {
+					return;
+				}
+
+				if (scheduleEnd.value <= scheduleStart.value) {
+					scheduleEnd.setCustomValidity(strings.invalidRange);
+				}
+			}
+
+			if (scheduleEnabled) {
+				scheduleEnabled.addEventListener("change", updateScheduleRequiredFields);
+				updateScheduleRequiredFields();
+			}
+
+			if (scheduleStart) {
+				scheduleStart.addEventListener("change", validateScheduleRange);
+			}
+
+			if (scheduleEnd) {
+				scheduleEnd.addEventListener("change", validateScheduleRange);
 			}
 		});'
 	);
@@ -568,7 +749,7 @@ add_action( 'admin_notices', 'sitecare_maintenance_render_admin_notices' );
  * @return void
  */
 function sitecare_maintenance_render_general_intro() {
-	echo '<p>' . esc_html__( 'Turn maintenance mode on or off. Administrators can still view the normal site while public visitors see the maintenance page.', 'sitecare-maintenance-mode' ) . '</p>';
+	echo '<p>' . esc_html__( 'Turn maintenance mode on immediately, or schedule it to turn on automatically between a start and end time. The manual toggle works immediately and can keep maintenance mode on even outside the scheduled window.', 'sitecare-maintenance-mode' ) . '</p>';
 }
 
 /**
@@ -838,6 +1019,86 @@ function sitecare_maintenance_render_background_color_field() {
 }
 
 /**
+ * Renders the schedule enable checkbox.
+ *
+ * @return void
+ */
+function sitecare_maintenance_render_schedule_enabled_field() {
+	$options = sitecare_maintenance_get_options();
+	?>
+	<label for="sitecare-maintenance-schedule-enabled">
+		<input
+			type="checkbox"
+			id="sitecare-maintenance-schedule-enabled"
+			name="<?php echo esc_attr( SITECARE_MAINTENANCE_OPTION ); ?>[schedule_enabled]"
+			value="1"
+			<?php checked( 1, (int) $options['schedule_enabled'] ); ?>
+		/>
+		<?php esc_html_e( 'Enable scheduled maintenance', 'sitecare-maintenance-mode' ); ?>
+	</label>
+	<p class="description">
+		<?php esc_html_e( 'When enabled, maintenance mode turns on automatically between the start and end time below. The manual toggle can still turn maintenance mode on immediately.', 'sitecare-maintenance-mode' ); ?>
+	</p>
+	<?php
+}
+
+/**
+ * Renders a schedule datetime field.
+ *
+ * @param string $field_id Field ID suffix.
+ * @param string $option_key Option array key.
+ * @param string $description Help text.
+ * @return void
+ */
+function sitecare_maintenance_render_schedule_datetime_field( $field_id, $option_key, $description ) {
+	$options = sitecare_maintenance_get_options();
+	?>
+	<input
+		type="datetime-local"
+		id="<?php echo esc_attr( 'sitecare-maintenance-' . $field_id ); ?>"
+		name="<?php echo esc_attr( SITECARE_MAINTENANCE_OPTION ); ?>[<?php echo esc_attr( $option_key ); ?>]"
+		value="<?php echo esc_attr( $options[ $option_key ] ); ?>"
+	/>
+	<p class="description">
+		<?php echo esc_html( $description ); ?>
+		<?php
+		printf(
+			/* translators: %s: WordPress timezone string. */
+			esc_html__( ' Times use the WordPress site timezone: %s.', 'sitecare-maintenance-mode' ),
+			esc_html( sitecare_maintenance_get_timezone_label() )
+		);
+		?>
+	</p>
+	<?php
+}
+
+/**
+ * Renders the schedule start field.
+ *
+ * @return void
+ */
+function sitecare_maintenance_render_schedule_start_field() {
+	sitecare_maintenance_render_schedule_datetime_field(
+		'schedule-start',
+		'schedule_start',
+		__( 'Choose when scheduled maintenance should begin.', 'sitecare-maintenance-mode' )
+	);
+}
+
+/**
+ * Renders the schedule end field.
+ *
+ * @return void
+ */
+function sitecare_maintenance_render_schedule_end_field() {
+	sitecare_maintenance_render_schedule_datetime_field(
+		'schedule-end',
+		'schedule_end',
+		__( 'Choose when scheduled maintenance should end automatically.', 'sitecare-maintenance-mode' )
+	);
+}
+
+/**
  * Renders the text color field.
  *
  * @return void
@@ -893,10 +1154,11 @@ function sitecare_maintenance_render_settings_page() {
 
 	$preview_url = sitecare_maintenance_get_preview_url();
 	$options     = sitecare_maintenance_get_options();
-	$is_enabled  = ! empty( $options['enabled'] );
+	$is_enabled  = sitecare_maintenance_is_enabled();
 	?>
 	<div class="wrap sitecare-maintenance-admin-page">
 		<h1><?php esc_html_e( 'SiteCare Maintenance Mode', 'sitecare-maintenance-mode' ); ?></h1>
+		<?php settings_errors( SITECARE_MAINTENANCE_OPTION ); ?>
 		<p class="sitecare-maintenance-status <?php echo esc_attr( $is_enabled ? 'is-on' : 'is-off' ); ?>">
 			<?php
 			echo esc_html(
@@ -908,7 +1170,7 @@ function sitecare_maintenance_render_settings_page() {
 		</p>
 		<?php if ( $is_enabled ) : ?>
 			<div class="notice notice-warning inline">
-				<p><?php esc_html_e( 'Maintenance mode is enabled. Public visitors may see the maintenance page until you turn it off and save the settings.', 'sitecare-maintenance-mode' ); ?></p>
+				<p><?php esc_html_e( 'Maintenance mode is active. Public visitors may see the maintenance page until manual mode is turned off or the schedule ends.', 'sitecare-maintenance-mode' ); ?></p>
 			</div>
 		<?php endif; ?>
 		<form action="options.php" method="post">
@@ -944,7 +1206,34 @@ function sitecare_maintenance_render_settings_page() {
 function sitecare_maintenance_is_enabled() {
 	$options = sitecare_maintenance_get_options();
 
-	return ! empty( $options['enabled'] );
+	return ! empty( $options['enabled'] ) || sitecare_maintenance_is_schedule_active( $options );
+}
+
+/**
+ * Checks whether scheduled maintenance is currently active.
+ *
+ * @param array|null $options Optional plugin options.
+ * @return bool
+ */
+function sitecare_maintenance_is_schedule_active( $options = null ) {
+	if ( null === $options ) {
+		$options = sitecare_maintenance_get_options();
+	}
+
+	if ( empty( $options['schedule_enabled'] ) ) {
+		return false;
+	}
+
+	$start_timestamp = sitecare_maintenance_schedule_datetime_to_timestamp( $options['schedule_start'] );
+	$end_timestamp   = sitecare_maintenance_schedule_datetime_to_timestamp( $options['schedule_end'] );
+
+	if ( null === $start_timestamp || null === $end_timestamp || $end_timestamp <= $start_timestamp ) {
+		return false;
+	}
+
+	$current_timestamp = current_datetime()->getTimestamp();
+
+	return $current_timestamp >= $start_timestamp && $current_timestamp <= $end_timestamp;
 }
 
 /**
@@ -1056,6 +1345,20 @@ function sitecare_maintenance_get_layout_max_width( $layout_width ) {
 }
 
 /**
+ * Sends headers for the visitor-facing maintenance response.
+ *
+ * A 503 status tells search engines the site is temporarily unavailable, not
+ * permanently changed. Retry-After asks crawlers to come back later.
+ *
+ * @return void
+ */
+function sitecare_maintenance_send_unavailable_headers() {
+	status_header( 503 );
+	nocache_headers();
+	header( 'Retry-After: 3600' );
+}
+
+/**
  * Decides whether the current request should bypass maintenance mode.
  *
  * @return bool
@@ -1098,12 +1401,12 @@ function sitecare_maintenance_should_bypass() {
  */
 function sitecare_maintenance_render_page( $status_code = 503 ) {
 	$status_code = absint( $status_code );
+	$is_unavailable = ( 503 === $status_code );
 
-	status_header( $status_code );
-	nocache_headers();
-
-	if ( 503 === $status_code ) {
-		header( 'Retry-After: 3600' );
+	if ( $is_unavailable ) {
+		sitecare_maintenance_send_unavailable_headers();
+	} else {
+		status_header( $status_code );
 	}
 
 	$options = sitecare_maintenance_get_options();
@@ -1127,6 +1430,9 @@ function sitecare_maintenance_render_page( $status_code = 503 ) {
 	<head>
 		<meta charset="<?php echo esc_attr( get_bloginfo( 'charset' ) ); ?>">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<?php if ( $is_unavailable ) : ?>
+			<meta name="robots" content="noindex, nofollow">
+		<?php endif; ?>
 		<title><?php echo esc_html( $title ); ?></title>
 		<?php wp_print_styles( array( 'dashicons', 'sitecare-maintenance-page' ) ); ?>
 		<style>
