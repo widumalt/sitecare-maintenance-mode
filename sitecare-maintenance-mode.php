@@ -95,7 +95,75 @@ function sitecare_maintenance_default_options() {
 		'background_color'   => '#f5f5f5',
 		'text_color'         => '#111111',
 		'layout_width'       => 'medium',
+		'bypass_roles'       => array( 'administrator' ),
+		'ip_whitelist'       => array(),
 	);
+}
+
+/**
+ * Gets valid WordPress role keys.
+ *
+ * @return array
+ */
+function sitecare_maintenance_get_valid_role_keys() {
+	$roles = wp_roles();
+
+	if ( empty( $roles->roles ) || ! is_array( $roles->roles ) ) {
+		return array();
+	}
+
+	return array_keys( $roles->roles );
+}
+
+/**
+ * Sanitizes selected bypass role keys.
+ *
+ * @param array $roles Raw selected role keys.
+ * @return array
+ */
+function sitecare_maintenance_sanitize_bypass_roles( $roles ) {
+	$roles      = is_array( $roles ) ? $roles : array();
+	$valid_keys = sitecare_maintenance_get_valid_role_keys();
+	$clean      = array();
+
+	foreach ( $roles as $role ) {
+		$role = sanitize_key( $role );
+
+		if ( in_array( $role, $valid_keys, true ) ) {
+			$clean[] = $role;
+		}
+	}
+
+	return array_values( array_unique( $clean ) );
+}
+
+/**
+ * Sanitizes IP whitelist entries.
+ *
+ * @param array|string $ips Raw IP list.
+ * @return array
+ */
+function sitecare_maintenance_sanitize_ip_whitelist( $ips ) {
+	if ( is_string( $ips ) ) {
+		$ips = preg_split( '/\r\n|\r|\n/', $ips );
+	}
+
+	$ips   = is_array( $ips ) ? $ips : array();
+	$clean = array();
+
+	foreach ( $ips as $ip ) {
+		$ip = trim( sanitize_text_field( $ip ) );
+
+		if ( '' === $ip ) {
+			continue;
+		}
+
+		if ( filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+			$clean[] = $ip;
+		}
+	}
+
+	return array_values( array_unique( $clean ) );
 }
 
 /**
@@ -217,6 +285,8 @@ function sitecare_maintenance_sanitize_options( $input ) {
 
 	$input = is_array( $input ) ? $input : array();
 	$defaults = sitecare_maintenance_default_options();
+	$bypass_roles = array_key_exists( 'bypass_roles', $input ) ? sitecare_maintenance_sanitize_bypass_roles( (array) $input['bypass_roles'] ) : array();
+	$ip_whitelist = array_key_exists( 'ip_whitelist', $input ) ? sitecare_maintenance_sanitize_ip_whitelist( $input['ip_whitelist'] ) : array();
 	$input    = wp_parse_args( $input, $defaults );
 
 	$title   = sanitize_text_field( $input['title'] );
@@ -291,6 +361,8 @@ function sitecare_maintenance_sanitize_options( $input ) {
 		'background_color'   => $background_color,
 		'text_color'         => $text_color,
 		'layout_width'       => $layout_width,
+		'bypass_roles'       => $bypass_roles,
+		'ip_whitelist'       => $ip_whitelist,
 	);
 }
 
@@ -326,6 +398,10 @@ function sitecare_maintenance_register_settings() {
 		'sitecare_maintenance_design_section'  => array(
 			'title'    => esc_html__( 'Branding & Design', 'sitecare-maintenance-mode' ),
 			'callback' => 'sitecare_maintenance_render_design_intro',
+		),
+		'sitecare_maintenance_bypass_section'  => array(
+			'title'    => esc_html__( 'Bypass Rules', 'sitecare-maintenance-mode' ),
+			'callback' => 'sitecare_maintenance_render_bypass_intro',
 		),
 	);
 
@@ -465,6 +541,22 @@ function sitecare_maintenance_register_settings() {
 		'sitecare-maintenance-mode',
 		'sitecare_maintenance_design_section'
 	);
+
+	add_settings_field(
+		'sitecare_maintenance_bypass_roles',
+		esc_html__( 'Role Bypass', 'sitecare-maintenance-mode' ),
+		'sitecare_maintenance_render_bypass_roles_field',
+		'sitecare-maintenance-mode',
+		'sitecare_maintenance_bypass_section'
+	);
+
+	add_settings_field(
+		'sitecare_maintenance_ip_whitelist',
+		esc_html__( 'IP Whitelist', 'sitecare-maintenance-mode' ),
+		'sitecare_maintenance_render_ip_whitelist_field',
+		'sitecare-maintenance-mode',
+		'sitecare_maintenance_bypass_section'
+	);
 }
 add_action( 'admin_init', 'sitecare_maintenance_register_settings' );
 
@@ -494,6 +586,8 @@ function sitecare_maintenance_enqueue_admin_assets( $hook_suffix ) {
 		.sitecare-maintenance-admin-page .form-table { margin-top: 8px; background: #fff; border: 1px solid #dcdcde; }
 		.sitecare-maintenance-admin-page .form-table th { padding-left: 18px; }
 		.sitecare-maintenance-admin-page .form-table td { padding-right: 18px; }
+		.sitecare-maintenance-role-list { margin: 0; }
+		.sitecare-maintenance-role-list li { margin: 0 0 8px; }
 		.sitecare-maintenance-actions-panel { margin-top: 24px; padding: 16px 18px; background: #fff; border: 1px solid #dcdcde; }
 		.sitecare-maintenance-actions-panel h2 { margin-top: 0; padding-top: 0; border-top: 0; }'
 	);
@@ -573,6 +667,7 @@ function sitecare_maintenance_enqueue_admin_assets( $hook_suffix ) {
 						"sitecare-maintenance-instagram-url": "",
 						"sitecare-maintenance-linkedin-url": "",
 						"sitecare-maintenance-footer-text": "",
+						"sitecare-maintenance-ip-whitelist": "",
 						"sitecare-maintenance-background-color": defaults.background_color,
 						"sitecare-maintenance-text-color": defaults.text_color,
 						"sitecare-maintenance-layout-width": defaults.layout_width
@@ -583,6 +678,7 @@ function sitecare_maintenance_enqueue_admin_assets( $hook_suffix ) {
 					var logoIdField = document.getElementById("sitecare-maintenance-logo-id");
 					var logoPreview = document.getElementById("sitecare-maintenance-logo-preview");
 					var logoRemoveButton = document.getElementById("sitecare-maintenance-logo-remove");
+					var bypassRoleFields = document.querySelectorAll(".sitecare-maintenance-bypass-role");
 
 					if (enabledField) {
 						enabledField.checked = false;
@@ -615,6 +711,10 @@ function sitecare_maintenance_enqueue_admin_assets( $hook_suffix ) {
 					if (logoRemoveButton) {
 						logoRemoveButton.style.display = "none";
 					}
+
+					bypassRoleFields.forEach(function(field) {
+						field.checked = "administrator" === field.value;
+					});
 				});
 			}
 
@@ -777,6 +877,15 @@ function sitecare_maintenance_render_contact_intro() {
  */
 function sitecare_maintenance_render_design_intro() {
 	echo '<p>' . esc_html__( 'Add simple branding and adjust the basic look of the maintenance page.', 'sitecare-maintenance-mode' ) . '</p>';
+}
+
+/**
+ * Renders the Bypass Rules section description.
+ *
+ * @return void
+ */
+function sitecare_maintenance_render_bypass_intro() {
+	echo '<p>' . esc_html__( 'Choose which logged-in user roles can view the normal website while maintenance mode is active. Logged-out visitors still see the maintenance page.', 'sitecare-maintenance-mode' ) . '</p>';
 }
 
 /**
@@ -1143,6 +1252,68 @@ function sitecare_maintenance_render_layout_width_field() {
 }
 
 /**
+ * Renders the role bypass checkboxes.
+ *
+ * @return void
+ */
+function sitecare_maintenance_render_bypass_roles_field() {
+	$options      = sitecare_maintenance_get_options();
+	$bypass_roles = isset( $options['bypass_roles'] ) && is_array( $options['bypass_roles'] ) ? $options['bypass_roles'] : array();
+	$wp_roles     = wp_roles();
+	$roles        = isset( $wp_roles->roles ) && is_array( $wp_roles->roles ) ? $wp_roles->roles : array();
+
+	if ( empty( $roles ) ) {
+		echo '<p>' . esc_html__( 'No editable WordPress roles were found.', 'sitecare-maintenance-mode' ) . '</p>';
+		return;
+	}
+	?>
+	<ul class="sitecare-maintenance-role-list">
+		<?php foreach ( $roles as $role_key => $role ) : ?>
+			<li>
+				<label for="<?php echo esc_attr( 'sitecare-maintenance-bypass-role-' . $role_key ); ?>">
+					<input
+						type="checkbox"
+						class="sitecare-maintenance-bypass-role"
+						id="<?php echo esc_attr( 'sitecare-maintenance-bypass-role-' . $role_key ); ?>"
+						name="<?php echo esc_attr( SITECARE_MAINTENANCE_OPTION ); ?>[bypass_roles][]"
+						value="<?php echo esc_attr( $role_key ); ?>"
+						<?php checked( in_array( $role_key, $bypass_roles, true ) ); ?>
+					/>
+					<?php echo esc_html( translate_user_role( $role['name'] ) ); ?>
+				</label>
+			</li>
+		<?php endforeach; ?>
+	</ul>
+	<p class="description">
+		<?php esc_html_e( 'Selected logged-in roles bypass the maintenance page and can continue using the public website. Administrators also bypass through their normal WordPress capability.', 'sitecare-maintenance-mode' ); ?>
+	</p>
+	<?php
+}
+
+/**
+ * Renders the IP whitelist textarea.
+ *
+ * @return void
+ */
+function sitecare_maintenance_render_ip_whitelist_field() {
+	$options      = sitecare_maintenance_get_options();
+	$ip_whitelist = isset( $options['ip_whitelist'] ) && is_array( $options['ip_whitelist'] ) ? $options['ip_whitelist'] : array();
+	?>
+	<textarea
+		id="sitecare-maintenance-ip-whitelist"
+		class="large-text code"
+		rows="6"
+		name="<?php echo esc_attr( SITECARE_MAINTENANCE_OPTION ); ?>[ip_whitelist]"
+	><?php echo esc_textarea( implode( "\n", $ip_whitelist ) ); ?></textarea>
+	<p class="description">
+		<?php esc_html_e( 'Add one IP address per line. IPv4 and IPv6 addresses are supported.', 'sitecare-maintenance-mode' ); ?>
+		<?php esc_html_e( 'Only exact IP matches are supported in this phase. CIDR ranges are not supported yet.', 'sitecare-maintenance-mode' ); ?>
+		<?php esc_html_e( 'Your current IP may appear different in LocalWP or when using a proxy or VPN.', 'sitecare-maintenance-mode' ); ?>
+	</p>
+	<?php
+}
+
+/**
  * Renders the plugin settings page.
  *
  * @return void
@@ -1359,6 +1530,56 @@ function sitecare_maintenance_send_unavailable_headers() {
 }
 
 /**
+ * Checks whether the current logged-in user has a selected bypass role.
+ *
+ * @return bool
+ */
+function sitecare_maintenance_current_user_has_bypass_role() {
+	if ( ! is_user_logged_in() ) {
+		return false;
+	}
+
+	$options      = sitecare_maintenance_get_options();
+	$bypass_roles = isset( $options['bypass_roles'] ) && is_array( $options['bypass_roles'] ) ? $options['bypass_roles'] : array();
+	$bypass_roles = sitecare_maintenance_sanitize_bypass_roles( $bypass_roles );
+
+	if ( empty( $bypass_roles ) ) {
+		return false;
+	}
+
+	$user = wp_get_current_user();
+
+	if ( empty( $user->roles ) || ! is_array( $user->roles ) ) {
+		return false;
+	}
+
+	return ! empty( array_intersect( $user->roles, $bypass_roles ) );
+}
+
+/**
+ * Checks whether the current visitor IP is whitelisted.
+ *
+ * @return bool
+ */
+function sitecare_maintenance_current_ip_is_whitelisted() {
+	// Use REMOTE_ADDR for the beginner version because forwarded headers can be spoofed if the server is not configured to trust a proxy.
+	if ( empty( $_SERVER['REMOTE_ADDR'] ) ) {
+		return false;
+	}
+
+	$visitor_ip = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) );
+
+	if ( ! filter_var( $visitor_ip, FILTER_VALIDATE_IP ) ) {
+		return false;
+	}
+
+	$options      = sitecare_maintenance_get_options();
+	$ip_whitelist = isset( $options['ip_whitelist'] ) ? sitecare_maintenance_sanitize_ip_whitelist( $options['ip_whitelist'] ) : array();
+
+	return in_array( $visitor_ip, $ip_whitelist, true );
+}
+
+/**
  * Decides whether the current request should bypass maintenance mode.
  *
  * @return bool
@@ -1387,6 +1608,14 @@ function sitecare_maintenance_should_bypass() {
 	}
 
 	if ( current_user_can( 'manage_options' ) ) {
+		return true;
+	}
+
+	if ( sitecare_maintenance_current_user_has_bypass_role() ) {
+		return true;
+	}
+
+	if ( sitecare_maintenance_current_ip_is_whitelisted() ) {
 		return true;
 	}
 
