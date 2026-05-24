@@ -462,6 +462,10 @@ function sitecare_maintenance_register_settings() {
 			'title'    => esc_html__( 'Content', 'sitecare-maintenance-mode' ),
 			'callback' => 'sitecare_maintenance_render_content_intro',
 		),
+		'sitecare_maintenance_custom_html_section' => array(
+			'title'    => esc_html__( 'Custom HTML Override Mode', 'sitecare-maintenance-mode' ),
+			'callback' => 'sitecare_maintenance_render_custom_html_intro',
+		),
 		'sitecare_maintenance_contact_section' => array(
 			'title'    => esc_html__( 'Contact Details', 'sitecare-maintenance-mode' ),
 			'callback' => 'sitecare_maintenance_render_contact_intro',
@@ -542,7 +546,7 @@ function sitecare_maintenance_register_settings() {
 		esc_html__( 'Custom HTML Content', 'sitecare-maintenance-mode' ),
 		'sitecare_maintenance_render_custom_html_enabled_field',
 		'sitecare-maintenance-mode',
-		'sitecare_maintenance_content_section'
+		'sitecare_maintenance_custom_html_section'
 	);
 
 	add_settings_field(
@@ -550,7 +554,7 @@ function sitecare_maintenance_register_settings() {
 		esc_html__( 'Custom HTML', 'sitecare-maintenance-mode' ),
 		'sitecare_maintenance_render_custom_html_field',
 		'sitecare-maintenance-mode',
-		'sitecare_maintenance_content_section'
+		'sitecare_maintenance_custom_html_section'
 	);
 
 	add_settings_field(
@@ -693,7 +697,14 @@ function sitecare_maintenance_enqueue_admin_assets( $hook_suffix ) {
 		.sitecare-maintenance-status { display: inline-block; margin: 8px 0 12px; padding: 6px 12px; border-radius: 3px; font-weight: 600; }
 		.sitecare-maintenance-status.is-on { background: #fcf0f1; color: #8a2424; }
 		.sitecare-maintenance-status.is-off { background: #edfaef; color: #1f6f2d; }
+		.sitecare-maintenance-status.is-warning { background: #fcf9e8; color: #7a4b00; border: 1px solid #f0c33c; }
+		.sitecare-maintenance-custom-html-warning ul { margin: 8px 0 0 20px; list-style: disc; }
 		.sitecare-maintenance-admin-page form { margin-top: 16px; }
+		.sitecare-maintenance-tabs { margin-top: 18px; }
+		.sitecare-maintenance-tab-panel { display: none; padding-top: 12px; }
+		.sitecare-maintenance-tab-panel.is-active { display: block; }
+		.sitecare-maintenance-tab-panel .sitecare-maintenance-actions-panel { margin-top: 12px; }
+		.sitecare-maintenance-submit { margin-top: 18px; padding-top: 14px; border-top: 1px solid #dcdcde; }
 		.sitecare-maintenance-admin-page h2 { margin-top: 28px; padding-top: 18px; border-top: 1px solid #dcdcde; }
 		.sitecare-maintenance-admin-page h2:first-of-type { margin-top: 18px; }
 		.sitecare-maintenance-admin-page .form-table { margin-top: 8px; background: #fff; border: 1px solid #dcdcde; }
@@ -923,6 +934,50 @@ function sitecare_maintenance_enqueue_admin_assets( $hook_suffix ) {
 			if (scheduleEnd) {
 				scheduleEnd.addEventListener("change", validateScheduleRange);
 			}
+
+			var tabLinks = document.querySelectorAll(".sitecare-maintenance-tab-link");
+			var tabPanels = document.querySelectorAll(".sitecare-maintenance-tab-panel");
+			var activeTabKey = "sitecareMaintenanceActiveTab";
+
+			function activateTab(tabId) {
+				var matchedPanel = document.getElementById(tabId);
+
+				if (!matchedPanel) {
+					return;
+				}
+
+				tabLinks.forEach(function(link) {
+					var isActive = link.getAttribute("data-tab") === tabId;
+
+					link.classList.toggle("nav-tab-active", isActive);
+					link.setAttribute("aria-selected", isActive ? "true" : "false");
+				});
+
+				tabPanels.forEach(function(panel) {
+					panel.classList.toggle("is-active", panel.id === tabId);
+				});
+
+				try {
+					window.localStorage.setItem(activeTabKey, tabId);
+				} catch (error) {}
+			}
+
+			tabLinks.forEach(function(link) {
+				link.addEventListener("click", function(event) {
+					event.preventDefault();
+					activateTab(link.getAttribute("data-tab"));
+				});
+			});
+
+			if (tabLinks.length) {
+				var savedTab = "";
+
+				try {
+					savedTab = window.localStorage.getItem(activeTabKey) || "";
+				} catch (error) {}
+
+				activateTab(savedTab || tabLinks[0].getAttribute("data-tab"));
+			}
 		});'
 	);
 }
@@ -1060,6 +1115,32 @@ function sitecare_maintenance_render_general_intro() {
  */
 function sitecare_maintenance_render_content_intro() {
 	echo '<p>' . esc_html__( 'Control the main text visitors see on the maintenance page. The countdown timer is optional and does not turn maintenance mode off automatically.', 'sitecare-maintenance-mode' ) . '</p>';
+}
+
+/**
+ * Renders the Custom HTML section description.
+ *
+ * @return void
+ */
+function sitecare_maintenance_render_custom_html_intro() {
+	?>
+	<div class="notice notice-warning inline sitecare-maintenance-custom-html-warning">
+		<p><strong><?php esc_html_e( 'Custom HTML Override Mode', 'sitecare-maintenance-mode' ); ?></strong></p>
+		<p><?php esc_html_e( 'When enabled and the custom HTML field is not empty, ONLY the custom HTML below will be displayed on the maintenance page.', 'sitecare-maintenance-mode' ); ?></p>
+		<p><?php esc_html_e( 'The following built-in content will be hidden:', 'sitecare-maintenance-mode' ); ?></p>
+		<ul>
+			<li><?php esc_html_e( 'Page title', 'sitecare-maintenance-mode' ); ?></li>
+			<li><?php esc_html_e( 'Message', 'sitecare-maintenance-mode' ); ?></li>
+			<li><?php esc_html_e( 'Logo', 'sitecare-maintenance-mode' ); ?></li>
+			<li><?php esc_html_e( 'Countdown timer', 'sitecare-maintenance-mode' ); ?></li>
+			<li><?php esc_html_e( 'Contact details', 'sitecare-maintenance-mode' ); ?></li>
+			<li><?php esc_html_e( 'Social links', 'sitecare-maintenance-mode' ); ?></li>
+			<li><?php esc_html_e( 'Footer text', 'sitecare-maintenance-mode' ); ?></li>
+			<li><?php esc_html_e( 'Template preset content', 'sitecare-maintenance-mode' ); ?></li>
+		</ul>
+		<p><?php esc_html_e( 'Your custom HTML replaces the built-in maintenance page content.', 'sitecare-maintenance-mode' ); ?></p>
+	</div>
+	<?php
 }
 
 /**
@@ -1400,7 +1481,7 @@ function sitecare_maintenance_render_custom_html_enabled_field() {
 			value="1"
 			<?php checked( 1, (int) $options['custom_html_enabled'] ); ?>
 		/>
-		<?php esc_html_e( 'Enable custom HTML content', 'sitecare-maintenance-mode' ); ?>
+		<?php esc_html_e( 'Enable Custom HTML Override', 'sitecare-maintenance-mode' ); ?>
 	</label>
 	<p class="description">
 		<?php esc_html_e( 'Use your own safe HTML instead of the built-in preset content. When enabled, only your custom HTML content is shown on the maintenance page.', 'sitecare-maintenance-mode' ); ?>
@@ -1665,6 +1746,57 @@ function sitecare_maintenance_render_ip_whitelist_field() {
 }
 
 /**
+ * Renders one registered Settings API section.
+ *
+ * WordPress normally prints every section for a page at once. This helper keeps
+ * the same registered fields, but lets the settings page group sections into
+ * simple tabs.
+ *
+ * @param string $page Settings API page slug.
+ * @param string $section_id Registered section ID.
+ * @return void
+ */
+function sitecare_maintenance_render_settings_section( $page, $section_id ) {
+	global $wp_settings_sections, $wp_settings_fields;
+
+	if ( empty( $wp_settings_sections[ $page ][ $section_id ] ) ) {
+		return;
+	}
+
+	$section = $wp_settings_sections[ $page ][ $section_id ];
+
+	if ( ! empty( $section['title'] ) ) {
+		echo '<h2>' . esc_html( $section['title'] ) . '</h2>';
+	}
+
+	if ( ! empty( $section['callback'] ) ) {
+		call_user_func( $section['callback'], $section );
+	}
+
+	if ( empty( $wp_settings_fields[ $page ][ $section_id ] ) ) {
+		return;
+	}
+
+	echo '<table class="form-table" role="presentation">';
+	do_settings_fields( $page, $section_id );
+	echo '</table>';
+}
+
+/**
+ * Checks whether Custom HTML Override is active.
+ *
+ * @param array|null $options Optional plugin options.
+ * @return bool
+ */
+function sitecare_maintenance_is_custom_html_override_active( $options = null ) {
+	if ( null === $options ) {
+		$options = sitecare_maintenance_get_options();
+	}
+
+	return ! empty( $options['custom_html_enabled'] ) && '' !== trim( $options['custom_html'] );
+}
+
+/**
  * Renders the plugin settings page.
  *
  * @return void
@@ -1677,6 +1809,15 @@ function sitecare_maintenance_render_settings_page() {
 	$preview_url = sitecare_maintenance_get_preview_url();
 	$options     = sitecare_maintenance_get_options();
 	$is_enabled  = sitecare_maintenance_is_enabled();
+	$is_custom_html_override_active = sitecare_maintenance_is_custom_html_override_active( $options );
+	$tabs        = array(
+		'sitecare-maintenance-tab-general' => __( 'General', 'sitecare-maintenance-mode' ),
+		'sitecare-maintenance-tab-content' => __( 'Content', 'sitecare-maintenance-mode' ),
+		'sitecare-maintenance-tab-design'  => __( 'Design', 'sitecare-maintenance-mode' ),
+		'sitecare-maintenance-tab-custom-html' => __( 'Custom HTML', 'sitecare-maintenance-mode' ),
+		'sitecare-maintenance-tab-bypass'  => __( 'Bypass', 'sitecare-maintenance-mode' ),
+		'sitecare-maintenance-tab-preview' => __( 'Preview & Reset', 'sitecare-maintenance-mode' ),
+	);
 	?>
 	<div class="wrap sitecare-maintenance-admin-page">
 		<h1><?php esc_html_e( 'SiteCare Maintenance Mode', 'sitecare-maintenance-mode' ); ?></h1>
@@ -1698,24 +1839,79 @@ function sitecare_maintenance_render_settings_page() {
 		<form action="options.php" method="post">
 			<?php
 			settings_fields( 'sitecare_maintenance_settings' );
-			do_settings_sections( 'sitecare-maintenance-mode' );
-			submit_button( esc_html__( 'Save Settings', 'sitecare-maintenance-mode' ) );
 			?>
+			<nav class="nav-tab-wrapper sitecare-maintenance-tabs" role="tablist" aria-label="<?php esc_attr_e( 'SiteCare Maintenance settings tabs', 'sitecare-maintenance-mode' ); ?>">
+				<?php foreach ( $tabs as $tab_id => $tab_label ) : ?>
+					<a
+						href="#<?php echo esc_attr( $tab_id ); ?>"
+						class="nav-tab sitecare-maintenance-tab-link <?php echo esc_attr( 'sitecare-maintenance-tab-general' === $tab_id ? 'nav-tab-active' : '' ); ?>"
+						data-tab="<?php echo esc_attr( $tab_id ); ?>"
+						role="tab"
+						aria-controls="<?php echo esc_attr( $tab_id ); ?>"
+						aria-selected="<?php echo esc_attr( 'sitecare-maintenance-tab-general' === $tab_id ? 'true' : 'false' ); ?>"
+					>
+						<?php echo esc_html( $tab_label ); ?>
+					</a>
+				<?php endforeach; ?>
+			</nav>
+
+			<div id="sitecare-maintenance-tab-general" class="sitecare-maintenance-tab-panel is-active" role="tabpanel">
+				<?php if ( $is_custom_html_override_active ) : ?>
+					<p class="sitecare-maintenance-status is-warning">
+						<?php esc_html_e( 'Custom HTML Override is ACTIVE', 'sitecare-maintenance-mode' ); ?>
+					</p>
+				<?php endif; ?>
+				<?php sitecare_maintenance_render_settings_section( 'sitecare-maintenance-mode', 'sitecare_maintenance_general_section' ); ?>
+			</div>
+
+			<div id="sitecare-maintenance-tab-content" class="sitecare-maintenance-tab-panel" role="tabpanel">
+				<?php
+				sitecare_maintenance_render_settings_section( 'sitecare-maintenance-mode', 'sitecare_maintenance_content_section' );
+				sitecare_maintenance_render_settings_section( 'sitecare-maintenance-mode', 'sitecare_maintenance_contact_section' );
+				?>
+			</div>
+
+			<div id="sitecare-maintenance-tab-design" class="sitecare-maintenance-tab-panel" role="tabpanel">
+				<?php if ( $is_custom_html_override_active ) : ?>
+					<div class="notice notice-warning inline">
+						<p><?php esc_html_e( 'Template presets are currently overridden by Custom HTML mode.', 'sitecare-maintenance-mode' ); ?></p>
+					</div>
+				<?php endif; ?>
+				<?php
+				sitecare_maintenance_render_settings_section( 'sitecare-maintenance-mode', 'sitecare_maintenance_templates_section' );
+				sitecare_maintenance_render_settings_section( 'sitecare-maintenance-mode', 'sitecare_maintenance_design_section' );
+				?>
+			</div>
+
+			<div id="sitecare-maintenance-tab-custom-html" class="sitecare-maintenance-tab-panel" role="tabpanel">
+				<?php sitecare_maintenance_render_settings_section( 'sitecare-maintenance-mode', 'sitecare_maintenance_custom_html_section' ); ?>
+			</div>
+
+			<div id="sitecare-maintenance-tab-bypass" class="sitecare-maintenance-tab-panel" role="tabpanel">
+				<?php sitecare_maintenance_render_settings_section( 'sitecare-maintenance-mode', 'sitecare_maintenance_bypass_section' ); ?>
+			</div>
+
+			<div id="sitecare-maintenance-tab-preview" class="sitecare-maintenance-tab-panel" role="tabpanel">
+				<div class="sitecare-maintenance-actions-panel">
+					<h2><?php esc_html_e( 'Preview & Reset', 'sitecare-maintenance-mode' ); ?></h2>
+					<p><?php esc_html_e( 'Preview the current saved maintenance page, or reset the visible form fields before saving.', 'sitecare-maintenance-mode' ); ?></p>
+					<p>
+						<a class="button button-secondary" href="<?php echo esc_url( $preview_url ); ?>" target="_blank" rel="noopener noreferrer">
+							<?php esc_html_e( 'Preview Maintenance Page', 'sitecare-maintenance-mode' ); ?>
+						</a>
+					</p>
+					<h3><?php esc_html_e( 'Reset Settings', 'sitecare-maintenance-mode' ); ?></h3>
+					<p><?php esc_html_e( 'Reset the visible form fields to default values. Nothing is saved until you click Save Settings.', 'sitecare-maintenance-mode' ); ?></p>
+					<button type="button" class="button button-secondary" id="sitecare-maintenance-reset-fields">
+						<?php esc_html_e( 'Reset Settings', 'sitecare-maintenance-mode' ); ?>
+					</button>
+				</div>
+			</div>
+
+			<div class="sitecare-maintenance-submit">
+				<?php submit_button( esc_html__( 'Save Settings', 'sitecare-maintenance-mode' ), 'primary', 'submit', false ); ?>
+			</div>
 		</form>
-		<div class="sitecare-maintenance-actions-panel">
-			<h2><?php esc_html_e( 'Preview & Reset', 'sitecare-maintenance-mode' ); ?></h2>
-			<p><?php esc_html_e( 'Preview the current saved maintenance page, or reset the visible form fields before saving.', 'sitecare-maintenance-mode' ); ?></p>
-			<p>
-				<a class="button button-secondary" href="<?php echo esc_url( $preview_url ); ?>" target="_blank" rel="noopener noreferrer">
-					<?php esc_html_e( 'Preview Maintenance Page', 'sitecare-maintenance-mode' ); ?>
-				</a>
-			</p>
-			<h3><?php esc_html_e( 'Reset Settings', 'sitecare-maintenance-mode' ); ?></h3>
-			<p><?php esc_html_e( 'Reset the visible form fields to default values. Nothing is saved until you click Save Settings.', 'sitecare-maintenance-mode' ); ?></p>
-			<button type="button" class="button button-secondary" id="sitecare-maintenance-reset-fields">
-				<?php esc_html_e( 'Reset Settings', 'sitecare-maintenance-mode' ); ?>
-			</button>
-		</div>
 	</div>
 	<?php
 }
@@ -2029,7 +2225,7 @@ function sitecare_maintenance_render_page( $status_code = 503 ) {
 	$title   = sitecare_maintenance_format_page_text( $options['title'] );
 	$message = sitecare_maintenance_format_page_text( $options['message'] );
 	$custom_html = ! empty( $options['custom_html_enabled'] ) ? trim( $options['custom_html'] ) : '';
-	$has_custom_html_override = ( '' !== $custom_html );
+	$has_custom_html_override = sitecare_maintenance_is_custom_html_override_active( $options );
 	$social_links = sitecare_maintenance_get_social_links( $options );
 	$has_contact  = ! empty( $options['contact_email'] ) || ! empty( $options['contact_phone'] ) || ! empty( $social_links );
 	$logo_url     = ! empty( $options['logo_attachment_id'] ) ? wp_get_attachment_image_url( absint( $options['logo_attachment_id'] ), 'medium' ) : '';
