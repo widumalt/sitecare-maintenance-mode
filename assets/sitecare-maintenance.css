@@ -28,6 +28,55 @@ html {
 	text-align: center;
 }
 
+.sitecare-template-classic .sitecare-maintenance-page {
+	border-top: 4px solid currentColor;
+	background: rgba(255, 255, 255, 0.28);
+}
+
+.sitecare-template-classic .sitecare-maintenance-logo {
+	margin-bottom: 30px;
+}
+
+.sitecare-template-center-card .sitecare-maintenance-page {
+	border: 1px solid rgba(255, 255, 255, 0.42);
+	border-radius: 18px;
+	background: rgba(255, 255, 255, 0.94);
+	box-shadow: 0 28px 90px rgba(0, 0, 0, 0.2);
+}
+
+.sitecare-template-center-card {
+	background:
+		linear-gradient(135deg, rgba(17, 24, 39, 0.16), rgba(34, 113, 177, 0.22)),
+		var(--sitecare-maintenance-background, #f5f5f5);
+}
+
+.sitecare-template-minimal {
+	align-items: flex-start;
+	justify-content: flex-start;
+}
+
+.sitecare-template-minimal .sitecare-maintenance-page {
+	padding-top: clamp(56px, 12vw, 120px);
+	text-align: left;
+}
+
+.sitecare-template-minimal .sitecare-maintenance-page h1 {
+	font-weight: 600;
+}
+
+.sitecare-template-minimal .sitecare-maintenance-logo,
+.sitecare-template-minimal .sitecare-maintenance-message,
+.sitecare-template-minimal .sitecare-maintenance-custom-html,
+.sitecare-template-minimal .sitecare-maintenance-footer {
+	margin-left: 0;
+	margin-right: 0;
+}
+
+.sitecare-template-minimal .sitecare-maintenance-contact-list,
+.sitecare-template-minimal .sitecare-maintenance-social-list {
+	justify-content: flex-start;
+}
+
 .sitecare-maintenance-logo {
 	display: block;
 	max-width: min(220px, 70vw);
@@ -54,10 +103,91 @@ html {
 	font-size: clamp(17px, 2.8vw, 20px);
 }
 
+.sitecare-maintenance-custom-html {
+	max-width: 60ch;
+	margin: clamp(20px, 4vw, 28px) auto 0;
+	color: var(--sitecare-maintenance-text, #111111);
+	font-size: 16px;
+	text-align: left;
+}
+
+.sitecare-maintenance-custom-html > :first-child {
+	margin-top: 0;
+}
+
+.sitecare-maintenance-custom-html > :last-child {
+	margin-bottom: 0;
+}
+
+.sitecare-maintenance-custom-html a {
+	color: currentColor;
+	font-weight: 700;
+	text-underline-offset: 3px;
+}
+
+.sitecare-maintenance-custom-html ul,
+.sitecare-maintenance-custom-html ol {
+	padding-left: 1.4em;
+}
+
+.sitecare-maintenance-countdown {
+	margin-top: clamp(24px, 5vw, 36px);
+}
+
+.sitecare-maintenance-countdown-fallback {
+	margin: 0;
+	font-size: 16px;
+	font-weight: 600;
+}
+
+.sitecare-maintenance-countdown-units {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(74px, 1fr));
+	gap: 10px;
+	max-width: 460px;
+	margin: 0 auto;
+}
+
+.sitecare-template-minimal .sitecare-maintenance-countdown-units {
+	margin-left: 0;
+	margin-right: 0;
+}
+
+.sitecare-maintenance-countdown-units span {
+	display: grid;
+	gap: 3px;
+	min-height: 76px;
+	align-content: center;
+	padding: 12px 8px;
+	border: 1px solid rgba(100, 105, 112, 0.3);
+	border-radius: 8px;
+	background: rgba(255, 255, 255, 0.16);
+	font-size: 13px;
+	font-weight: 700;
+	text-transform: uppercase;
+}
+
+.sitecare-maintenance-countdown-units strong {
+	display: block;
+	font-size: clamp(24px, 6vw, 34px);
+	line-height: 1;
+}
+
 .sitecare-maintenance-contact {
 	margin-top: clamp(28px, 5vw, 40px);
 	padding-top: clamp(24px, 4vw, 32px);
 	border-top: 1px solid rgba(100, 105, 112, 0.28);
+}
+
+.sitecare-template-center-card .sitecare-maintenance-contact-list a,
+.sitecare-template-center-card .sitecare-maintenance-social-list a,
+.sitecare-template-center-card .sitecare-maintenance-countdown-units span {
+	background: rgba(0, 0, 0, 0.035);
+}
+
+.sitecare-template-minimal .sitecare-maintenance-contact {
+	border-top: 0;
+	padding-top: 0;
 }
 
 .sitecare-maintenance-contact h2 {
@@ -139,6 +269,18 @@ html {
 
 	.sitecare-maintenance-page {
 		padding: 24px 8px;
+	}
+
+	.sitecare-template-center-card .sitecare-maintenance-page {
+		padding: 28px 16px;
+	}
+
+	.sitecare-template-minimal .sitecare-maintenance-page {
+		padding-top: 40px;
+	}
+
+	.sitecare-maintenance-countdown-units {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
 
 	.sitecare-maintenance-contact-list,

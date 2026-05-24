@@ -16,7 +16,7 @@ SiteCare Maintenance Mode helps WordPress administrators show visitors a simple 
 
 This MVP version adds basic admin settings for enabling or disabling maintenance mode, scheduling maintenance windows, customizing the maintenance page text, showing optional safe HTML content, showing optional visitor contact details, applying simple branding, choosing a frontend design preset, showing an optional countdown timer, previewing the maintenance page, choosing logged-in roles and trusted IP addresses that can bypass maintenance mode, and resetting the visible settings form to defaults. When enabled, visitors see a simple maintenance page, while administrators, selected logged-in roles, and whitelisted IP addresses can continue viewing the normal site.
 
-The settings page is organized into simple tabs for General, Content, Design, Custom HTML, Bypass, and Preview & Reset controls.
+The settings page is organized into simple tabs for General, Content, Design, Custom HTML, Bypass, Import / Export, and Preview & Reset controls.
 
 Future phases may add a fuller template system, custom HTML, and other advanced controls.
 
@@ -50,6 +50,10 @@ Yes. You can enable custom HTML content and add limited safe HTML such as paragr
 = Does the countdown timer end maintenance mode automatically? =
 
 No. The countdown timer is visual only. Manual maintenance mode and scheduled maintenance mode still control whether maintenance mode is active.
+
+= Can I back up or copy settings? =
+
+Yes. Use the Import / Export tab to download a JSON backup or paste a previous export to restore validated plugin settings.
 
 = Can I preview the maintenance page? =
 
@@ -99,6 +103,7 @@ This version is for development and learning. Test it carefully before using it 
 * Added a red admin bar status label when maintenance mode is active.
 * Organized the admin settings page into simple WordPress-style tabs.
 * Moved Custom HTML Override into its own admin tab with clearer override warnings.
+* Added JSON import and export for plugin settings.
 * Added editable maintenance page title and message fields.
 * Added optional email, phone, social link, and footer text fields.
 * Added logo, color, and layout width settings.

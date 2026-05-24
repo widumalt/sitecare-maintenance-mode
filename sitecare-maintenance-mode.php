@@ -705,6 +705,9 @@ function sitecare_maintenance_enqueue_admin_assets( $hook_suffix ) {
 		.sitecare-maintenance-tab-panel.is-active { display: block; }
 		.sitecare-maintenance-tab-panel .sitecare-maintenance-actions-panel { margin-top: 12px; }
 		.sitecare-maintenance-submit { margin-top: 18px; padding-top: 14px; border-top: 1px solid #dcdcde; }
+		.sitecare-maintenance-import-export-panel { max-width: 760px; margin-top: 18px; padding: 16px 18px; background: #fff; border: 1px solid #dcdcde; }
+		.sitecare-maintenance-import-export-panel h2 { margin-top: 0; padding-top: 0; border-top: 0; }
+		.sitecare-maintenance-import-export-panel textarea { min-height: 180px; }
 		.sitecare-maintenance-admin-page h2 { margin-top: 28px; padding-top: 18px; border-top: 1px solid #dcdcde; }
 		.sitecare-maintenance-admin-page h2:first-of-type { margin-top: 18px; }
 		.sitecare-maintenance-admin-page .form-table { margin-top: 8px; background: #fff; border: 1px solid #dcdcde; }
@@ -995,6 +998,143 @@ function sitecare_maintenance_add_admin_menu() {
 		'sitecare_maintenance_render_settings_page'
 	);
 }
+
+/**
+ * Gets the settings page URL.
+ *
+ * @param array $args Optional query args.
+ * @return string
+ */
+function sitecare_maintenance_get_settings_url( $args = array() ) {
+	$url = admin_url( 'options-general.php?page=sitecare-maintenance-mode' );
+
+	if ( ! empty( $args ) ) {
+		$url = add_query_arg( $args, $url );
+	}
+
+	return $url;
+}
+
+/**
+ * Redirects back to the settings page after import actions.
+ *
+ * @param string $result Import result key.
+ * @return void
+ */
+function sitecare_maintenance_redirect_import_result( $result ) {
+	wp_safe_redirect(
+		sitecare_maintenance_get_settings_url(
+			array(
+				'sitecare_maintenance_import' => sanitize_key( $result ),
+			)
+		)
+	);
+	exit;
+}
+
+/**
+ * Handles JSON settings export.
+ *
+ * @return void
+ */
+function sitecare_maintenance_handle_export_settings() {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_die( esc_html__( 'You do not have permission to export these settings.', 'sitecare-maintenance-mode' ) );
+	}
+
+	check_admin_referer( 'sitecare_maintenance_export_settings' );
+
+	$export = array(
+		'plugin'      => 'sitecare-maintenance-mode',
+		'version'     => SITECARE_MAINTENANCE_VERSION,
+		'exported_at' => current_datetime()->format( 'Y-m-d H:i:s' ),
+		'settings'    => sitecare_maintenance_get_options(),
+	);
+
+	nocache_headers();
+	header( 'Content-Type: application/json; charset=' . get_option( 'blog_charset' ) );
+	header( 'Content-Disposition: attachment; filename=sitecare-maintenance-settings.json' );
+	header( 'X-Content-Type-Options: nosniff' );
+
+	echo wp_json_encode( $export, JSON_PRETTY_PRINT );
+	exit;
+}
+
+/**
+ * Extracts a settings array from imported JSON data.
+ *
+ * @param mixed $decoded Decoded JSON value.
+ * @return array|null
+ */
+function sitecare_maintenance_get_import_settings_from_json( $decoded ) {
+	if ( ! is_array( $decoded ) ) {
+		return null;
+	}
+
+	if ( isset( $decoded['plugin'] ) && 'sitecare-maintenance-mode' !== sanitize_key( $decoded['plugin'] ) ) {
+		return null;
+	}
+
+	if ( isset( $decoded['settings'] ) && is_array( $decoded['settings'] ) ) {
+		return $decoded['settings'];
+	}
+
+	$defaults = sitecare_maintenance_default_options();
+
+	foreach ( array_keys( $defaults ) as $option_key ) {
+		if ( array_key_exists( $option_key, $decoded ) ) {
+			return $decoded;
+		}
+	}
+
+	return null;
+}
+
+/**
+ * Handles JSON settings import.
+ *
+ * @return void
+ */
+function sitecare_maintenance_handle_import_settings() {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		sitecare_maintenance_redirect_import_result( 'permission' );
+	}
+
+	if ( ! isset( $_POST['sitecare_maintenance_import_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['sitecare_maintenance_import_nonce'] ) ), 'sitecare_maintenance_import_settings' ) ) {
+		sitecare_maintenance_redirect_import_result( 'nonce' );
+	}
+
+	$json = isset( $_POST['sitecare_maintenance_import_json'] ) ? wp_unslash( $_POST['sitecare_maintenance_import_json'] ) : '';
+	$json = trim( (string) $json );
+
+	if ( '' === $json ) {
+		sitecare_maintenance_redirect_import_result( 'empty' );
+	}
+
+	$decoded = json_decode( $json, true );
+
+	if ( JSON_ERROR_NONE !== json_last_error() ) {
+		sitecare_maintenance_redirect_import_result( 'invalid_json' );
+	}
+
+	$imported_settings = sitecare_maintenance_get_import_settings_from_json( $decoded );
+
+	if ( empty( $imported_settings ) || ! is_array( $imported_settings ) ) {
+		sitecare_maintenance_redirect_import_result( 'no_settings' );
+	}
+
+	$allowed_settings = array_intersect_key( $imported_settings, sitecare_maintenance_default_options() );
+
+	if ( empty( $allowed_settings ) ) {
+		sitecare_maintenance_redirect_import_result( 'no_settings' );
+	}
+
+	$sanitized_settings = sitecare_maintenance_sanitize_options( $allowed_settings );
+
+	update_option( SITECARE_MAINTENANCE_OPTION, $sanitized_settings );
+	sitecare_maintenance_redirect_import_result( 'success' );
+}
+
 /**
  * Replaces the generic Settings API success flag with a plugin-specific flag.
  *
@@ -1040,11 +1180,29 @@ function sitecare_maintenance_render_admin_notices() {
 		$message = __( 'SiteCare Maintenance Mode settings saved.', 'sitecare-maintenance-mode' );
 	}
 
+	if ( isset( $_GET['sitecare_maintenance_import'] ) ) {
+		$import_result = sanitize_key( wp_unslash( $_GET['sitecare_maintenance_import'] ) );
+		$messages      = array(
+			'success'      => __( 'Settings imported successfully.', 'sitecare-maintenance-mode' ),
+			'invalid_json' => __( 'Invalid JSON. Please check the pasted settings and try again.', 'sitecare-maintenance-mode' ),
+			'empty'        => __( 'No import data was provided.', 'sitecare-maintenance-mode' ),
+			'no_settings'  => __( 'No valid settings found in the imported JSON.', 'sitecare-maintenance-mode' ),
+			'permission'   => __( 'Import failed because your account does not have permission.', 'sitecare-maintenance-mode' ),
+			'nonce'        => __( 'Import failed because the security check did not pass. Please try again.', 'sitecare-maintenance-mode' ),
+		);
+
+		if ( isset( $messages[ $import_result ] ) ) {
+			$message = $messages[ $import_result ];
+		}
+	}
+
 	if ( '' === $message ) {
 		return;
 	}
+
+	$notice_class = ( isset( $import_result ) && 'success' !== $import_result ) ? 'notice notice-error is-dismissible' : 'notice notice-success is-dismissible';
 	?>
-	<div class="notice notice-success is-dismissible">
+	<div class="<?php echo esc_attr( $notice_class ); ?>">
 		<p><?php echo esc_html( $message ); ?></p>
 	</div>
 	<?php
@@ -1797,6 +1955,57 @@ function sitecare_maintenance_is_custom_html_override_active( $options = null ) 
 }
 
 /**
+ * Renders the Import / Export admin tab content.
+ *
+ * @return void
+ */
+function sitecare_maintenance_render_import_export_tab() {
+	$export_url = wp_nonce_url(
+		admin_url( 'admin-post.php?action=sitecare_maintenance_export_settings' ),
+		'sitecare_maintenance_export_settings'
+	);
+	?>
+	<div class="sitecare-maintenance-import-export-panel">
+		<h2><?php esc_html_e( 'Export Settings', 'sitecare-maintenance-mode' ); ?></h2>
+		<p><?php esc_html_e( 'Export creates a JSON backup of the current SiteCare Maintenance Mode settings only.', 'sitecare-maintenance-mode' ); ?></p>
+		<p>
+			<a class="button button-secondary" href="<?php echo esc_url( $export_url ); ?>">
+				<?php esc_html_e( 'Export Settings', 'sitecare-maintenance-mode' ); ?>
+			</a>
+		</p>
+	</div>
+
+	<div class="sitecare-maintenance-import-export-panel">
+		<h2><?php esc_html_e( 'Import Settings', 'sitecare-maintenance-mode' ); ?></h2>
+		<p><?php esc_html_e( 'Paste exported JSON below. Import replaces current plugin settings after validation.', 'sitecare-maintenance-mode' ); ?></p>
+		<p><?php esc_html_e( 'Imported custom HTML is sanitized again. Unknown or unsafe values are ignored.', 'sitecare-maintenance-mode' ); ?></p>
+		<p>
+			<label for="sitecare-maintenance-import-json">
+				<strong><?php esc_html_e( 'Settings JSON', 'sitecare-maintenance-mode' ); ?></strong>
+			</label>
+		</p>
+		<textarea
+			id="sitecare-maintenance-import-json"
+			class="large-text code"
+			name="sitecare_maintenance_import_json"
+			form="sitecare-maintenance-import-form"
+			rows="10"
+			placeholder="<?php esc_attr_e( 'Paste exported JSON here.', 'sitecare-maintenance-mode' ); ?>"
+		></textarea>
+		<p>
+			<button
+				type="submit"
+				class="button button-secondary"
+				form="sitecare-maintenance-import-form"
+			>
+				<?php esc_html_e( 'Import Settings', 'sitecare-maintenance-mode' ); ?>
+			</button>
+		</p>
+	</div>
+	<?php
+}
+
+/**
  * Renders the plugin settings page.
  *
  * @return void
@@ -1816,6 +2025,7 @@ function sitecare_maintenance_render_settings_page() {
 		'sitecare-maintenance-tab-design'  => __( 'Design', 'sitecare-maintenance-mode' ),
 		'sitecare-maintenance-tab-custom-html' => __( 'Custom HTML', 'sitecare-maintenance-mode' ),
 		'sitecare-maintenance-tab-bypass'  => __( 'Bypass', 'sitecare-maintenance-mode' ),
+		'sitecare-maintenance-tab-import-export' => __( 'Import / Export', 'sitecare-maintenance-mode' ),
 		'sitecare-maintenance-tab-preview' => __( 'Preview & Reset', 'sitecare-maintenance-mode' ),
 	);
 	?>
@@ -1891,6 +2101,10 @@ function sitecare_maintenance_render_settings_page() {
 				<?php sitecare_maintenance_render_settings_section( 'sitecare-maintenance-mode', 'sitecare_maintenance_bypass_section' ); ?>
 			</div>
 
+			<div id="sitecare-maintenance-tab-import-export" class="sitecare-maintenance-tab-panel" role="tabpanel">
+				<?php sitecare_maintenance_render_import_export_tab(); ?>
+			</div>
+
 			<div id="sitecare-maintenance-tab-preview" class="sitecare-maintenance-tab-panel" role="tabpanel">
 				<div class="sitecare-maintenance-actions-panel">
 					<h2><?php esc_html_e( 'Preview & Reset', 'sitecare-maintenance-mode' ); ?></h2>
@@ -1911,6 +2125,10 @@ function sitecare_maintenance_render_settings_page() {
 			<div class="sitecare-maintenance-submit">
 				<?php submit_button( esc_html__( 'Save Settings', 'sitecare-maintenance-mode' ), 'primary', 'submit', false ); ?>
 			</div>
+		</form>
+		<form id="sitecare-maintenance-import-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+			<input type="hidden" name="action" value="sitecare_maintenance_import_settings" />
+			<?php wp_nonce_field( 'sitecare_maintenance_import_settings', 'sitecare_maintenance_import_nonce' ); ?>
 		</form>
 	</div>
 	<?php
