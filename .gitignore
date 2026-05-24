@@ -9,3 +9,33 @@ build/
 *.zip
 .env
 *.log
+
+# WordPress core and local site files.
+wp-admin/
+wp-includes/
+wp-content/uploads/
+wp-content/upgrade/
+wp-content/cache/
+wp-content/debug.log
+wp-config.php
+
+# LocalWP and local development files.
+Local Sites/
+.local/
+app/public/
+app/sql/
+*.sql
+*.sqlite
+*.sqlite3
+*.db
+
+# Build/package outputs.
+*.tar
+*.tar.gz
+*.rar
+*.7z
+*.bak
+*.backup
+*.tmp
+*.swp
+*.swo

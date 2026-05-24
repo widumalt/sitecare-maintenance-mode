@@ -27,8 +27,6 @@ This first stable release keeps the plugin lightweight and beginner-friendly. It
 3. Find "SiteCare Maintenance Mode".
 4. Click "Activate".
 
-For local development, this project is intended to be linked into the LocalWP site named `sitecare-plugin-dev` using a Windows junction.
-
 == Frequently Asked Questions ==
 
 = Does this version enable maintenance mode? =
@@ -82,6 +80,11 @@ The plugin deletes its `sitecare_maintenance_options` option. It does not delete
 = Can I use this on a live site now? =
 
 This is the first stable 1.0.0 release. Test changes on a staging or local site before using them on a production website.
+
+== Screenshots ==
+
+1. SiteCare Maintenance Mode settings page with tabbed controls.
+2. Maintenance page preview with design presets and visitor-facing content.
 
 == Changelog ==
 

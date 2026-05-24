@@ -117,6 +117,25 @@ Use this checklist before tagging or publishing the first stable release.
 - [ ] `wp-content/debug.log` has no new PHP warnings, notices, or fatal errors after previewing all presets.
 - [ ] `wp-content/debug.log` has no new PHP warnings, notices, or fatal errors after import/export testing.
 
+## WordPress.org Submission Notes
+
+Use these notes when preparing the WordPress.org Plugin Directory SVN repository.
+
+- [ ] Put functional plugin code in `/trunk`.
+- [ ] Copy the `1.0.0` release from `/trunk` to `/tags/1.0.0`.
+- [ ] Put WordPress.org directory assets in the SVN `/assets` folder, not inside the plugin code unless they are runtime plugin assets.
+- [ ] Required directory asset dimensions to prepare before submission:
+  - `assets/icon-128x128.png` at 128 x 128 px.
+  - `assets/icon-256x256.png` at 256 x 256 px.
+  - `assets/banner-772x250.png` at 772 x 250 px.
+  - `assets/banner-1544x500.png` at 1544 x 500 px.
+  - `assets/screenshot-1.png` sized for the settings page screenshot.
+  - `assets/screenshot-2.png` sized for the maintenance page screenshot.
+- [ ] Do not generate fake screenshots, icons, or banners. Use real plugin screenshots and brand-approved artwork.
+- [ ] Do not commit LocalWP files, debug logs, database exports, uploads, build files, ZIP files, backups, or temporary files to SVN.
+- [ ] Include release plugin files only: `sitecare-maintenance-mode.php`, `readme.txt`, `uninstall.php`, `index.php`, `includes/`, `admin/`, `public/`, `templates/`, plugin runtime `assets/`, and `languages/`.
+- [ ] Keep development planning docs out of the WordPress.org `/trunk` release copy unless intentionally submitting them as documentation.
+
 ## Repository Checks
 
 - [ ] The repo contains the planned documentation files.

@@ -4,7 +4,8 @@
  * Plugin URI: https://github.com/widumalt/sitecare-maintenance-mode
  * Description: A beginner-friendly maintenance mode plugin for showing visitors a simple offline page while administrators keep working.
  * Version: 1.0.0
- * Author: SiteCare Maintenance Mode Contributors
+ * Author: WiTEDS
+ * Author URI: https://witeds.com/WP-Plugins/
  * License: GPL-2.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: sitecare-maintenance-mode
