@@ -2,7 +2,7 @@
 
 ## Project Name
 
-**SiteCare Maintenance Mode**
+**SitePause - Custom HTML Offline & Maintenance Mode Activator**
 
 ## Current Status
 
@@ -14,7 +14,7 @@ Phase 2 will be the first functional MVP with an admin toggle, saved setting, vi
 
 ## Project Details
 
-- Plugin name: `SiteCare Maintenance Mode`
+- Plugin name: `SitePause - Custom HTML Offline & Maintenance Mode Activator`
 - Plugin slug: `sitecare-maintenance-mode`
 - Main plugin file: `sitecare-maintenance-mode.php`
 - Text domain: `sitecare-maintenance-mode`
@@ -25,7 +25,7 @@ Phase 2 will be the first functional MVP with an admin toggle, saved setting, vi
 
 ## What This Plugin Will Do
 
-SiteCare Maintenance Mode is a WordPress plugin that helps site administrators temporarily take a website offline for visitors while updates, design changes, or repairs are being made.
+SitePause is a WordPress plugin that helps site administrators temporarily take a website offline for visitors while updates, design changes, or repairs are being made.
 
 When maintenance mode is enabled, normal visitors will see a custom maintenance page instead of the regular website. Administrators will still be able to log in, view the site, and continue working.
 

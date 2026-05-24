@@ -1,6 +1,6 @@
-=== SiteCare Maintenance Mode ===
+=== SitePause - Custom HTML Offline & Maintenance Mode Activator ===
 Contributors: widumalt
-Tags: maintenance, coming soon, offline, admin
+Tags: maintenance, coming soon, offline, admin, custom html
 Requires at least: 6.0
 Tested up to: 6.5
 Requires PHP: 7.4
@@ -8,15 +8,15 @@ Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-A beginner-friendly WordPress maintenance mode plugin.
+A beginner-friendly WordPress offline and maintenance mode activator with safe custom HTML support.
 
 == Description ==
 
-SiteCare Maintenance Mode helps WordPress administrators show visitors a maintenance or offline page while site work is in progress.
+SitePause helps WordPress administrators show visitors a maintenance or offline page while site work is in progress.
 
-Version 1.0.0 includes admin settings for enabling or disabling maintenance mode, scheduling maintenance windows, customizing the maintenance page text, showing optional safe custom HTML, showing optional visitor contact details, applying simple branding, choosing one of five frontend design presets, showing an optional countdown timer, previewing the maintenance page, choosing logged-in roles and trusted IP addresses that can bypass maintenance mode, importing or exporting settings as JSON, and resetting the visible settings form to defaults. When enabled, visitors see the maintenance page, while administrators, selected logged-in roles, and whitelisted IP addresses can continue viewing the normal site.
+Version 1.0.0 includes admin settings for enabling or disabling maintenance mode, scheduling maintenance windows, customizing the maintenance page text, showing optional limited safe custom HTML, showing optional visitor contact details, applying simple branding, choosing one of five frontend design presets, showing an optional countdown timer, previewing the maintenance page, choosing logged-in roles and trusted IP addresses that can bypass maintenance mode, importing or exporting settings as JSON, and resetting the visible settings form to defaults. When enabled, visitors see the maintenance page, while administrators, selected logged-in roles, and whitelisted IP addresses can continue viewing the normal site.
 
-The settings page is organized into simple tabs for General, Content, Design, Custom HTML, Bypass, Import / Export, and Preview & Reset controls.
+The settings page is organized into simple tabs for General, Content, Branding, Custom HTML, Bypass, Import / Export, and Preview & Reset controls.
 
 This first stable release keeps the plugin lightweight and beginner-friendly. It does not use Composer, npm, React, external frameworks, custom database tables, payment code, or licensing code.
 
@@ -24,7 +24,7 @@ This first stable release keeps the plugin lightweight and beginner-friendly. It
 
 1. Copy or link the `sitecare-maintenance-mode` plugin folder into `wp-content/plugins`.
 2. Open WordPress Admin > Plugins.
-3. Find "SiteCare Maintenance Mode".
+3. Find "SitePause - Custom HTML Offline & Maintenance Mode Activator".
 4. Click "Activate".
 
 == Frequently Asked Questions ==
@@ -35,7 +35,7 @@ Yes. Administrators can enable or disable maintenance mode from the WordPress ad
 
 = What can I customize? =
 
-You can customize the maintenance page title, message, safe custom HTML content, contact email, phone number, social links, footer text, logo, background color, text color, layout width, design preset, and optional countdown timer.
+You can customize the maintenance page title, message, limited safe custom HTML content, contact email, phone number, social links, footer text, logo, background color, text color, layout width, design preset, and optional countdown timer.
 
 = Which design presets are included? =
 
@@ -43,7 +43,7 @@ This version includes Classic, Center Card, Minimal, Bold Panel, and Split Scree
 
 = Can I add custom HTML? =
 
-Yes. You can enable custom HTML content and add limited safe HTML such as paragraphs, lists, links, bold text, and emphasis. When custom HTML is enabled and not empty, it replaces the built-in preset content on the maintenance page. Unsafe tags like scripts are removed when settings are saved.
+Yes. You can enable custom HTML content and add limited safe HTML such as paragraphs, lists, links, bold text, and emphasis. When custom HTML is enabled and not empty, it replaces the built-in preset content on the maintenance page. Scripts, iframes, forms, styles, and unsafe markup are removed when settings are saved.
 
 = Does the countdown timer end maintenance mode automatically? =
 
@@ -51,7 +51,7 @@ No. The countdown timer is visual only. Manual maintenance mode and scheduled ma
 
 = Can I back up or copy settings? =
 
-Yes. Use the Import / Export tab to download a JSON backup or paste a previous export to restore validated plugin settings.
+Yes. Use the Import / Export tab to download a JSON backup or paste a previous export to restore validated SitePause settings.
 
 = Can I preview the maintenance page? =
 
@@ -83,8 +83,8 @@ This is the first stable 1.0.0 release. Test changes on a staging or local site 
 
 == Screenshots ==
 
-1. SiteCare Maintenance Mode settings page with tabbed controls.
-2. Maintenance page preview with design presets and visitor-facing content.
+1. SitePause settings page with tabbed controls.
+2. Offline page preview with design presets and visitor-facing content.
 
 == Changelog ==
 
@@ -124,4 +124,4 @@ This is the first stable 1.0.0 release. Test changes on a staging or local site 
 
 == License ==
 
-SiteCare Maintenance Mode is licensed under the GPLv2 or later.
+SitePause is licensed under the GPLv2 or later.

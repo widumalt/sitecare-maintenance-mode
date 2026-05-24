@@ -1,8 +1,6 @@
 # ROADMAP.md
 
-## ROADMAP.md
-
-This roadmap describes a practical path for building **SiteCare Maintenance Mode**.
+This roadmap describes a practical path for building **SitePause**.
 
 The project should move in small steps. Each phase should produce something understandable, testable, and useful.
 

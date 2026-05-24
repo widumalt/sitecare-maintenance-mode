@@ -2,7 +2,7 @@
 /**
  * Split Screen maintenance preset.
  *
- * @package SiteCareMaintenanceMode
+ * @package SitePause
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

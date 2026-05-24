@@ -1,8 +1,6 @@
 # DECISIONS.md
 
-## DECISIONS.md
-
-This file records project decisions for **SiteCare Maintenance Mode**.
+This file records project decisions for **SitePause**.
 
 Use it to explain why important choices were made. This helps future contributors understand the project without guessing.
 

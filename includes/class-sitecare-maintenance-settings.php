@@ -2,7 +2,7 @@
 /**
  * Admin settings class.
  *
- * @package SiteCareMaintenanceMode
+ * @package SitePause
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -15,6 +15,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class SiteCare_Maintenance_Settings {
 
 	/**
+	 * Whether hooks have been registered.
+	 *
+	 * @var bool
+	 */
+	private $hooks_registered = false;
+
+	/**
 	 * Registers settings-related hooks.
 	 *
 	 * The rendering and sanitization functions stay procedural for now so this
@@ -23,6 +30,12 @@ class SiteCare_Maintenance_Settings {
 	 * @return void
 	 */
 	public function register_hooks() {
+		if ( $this->hooks_registered ) {
+			return;
+		}
+
+		$this->hooks_registered = true;
+
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );

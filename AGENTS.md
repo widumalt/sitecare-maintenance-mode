@@ -2,7 +2,7 @@
 
 ## Project
 
-This repository is for a WordPress plugin named **SiteCare Maintenance Mode**.
+This repository is for a WordPress plugin named **SitePause - Custom HTML Offline & Maintenance Mode Activator**.
 
 The plugin will let site administrators enable a maintenance/offline mode, show regular visitors a custom maintenance page, and allow administrators to bypass that page while they work on the site.
 
@@ -24,7 +24,7 @@ The plugin will let site administrators enable a maintenance/offline mode, show 
 
 ## Plugin Identity
 
-- Plugin name: `SiteCare Maintenance Mode`
+- Plugin name: `SitePause - Custom HTML Offline & Maintenance Mode Activator`
 - Plugin slug: `sitecare-maintenance-mode`
 - Main plugin file: `sitecare-maintenance-mode.php`
 - Text domain: `sitecare-maintenance-mode`

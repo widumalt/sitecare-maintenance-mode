@@ -1,8 +1,6 @@
 # ARCHITECTURE.md
 
-## ARCHITECTURE.md
-
-This document explains the expected architecture for **SiteCare Maintenance Mode** in beginner-friendly terms.
+This document explains the expected architecture for **SitePause** in beginner-friendly terms.
 
 The project is now ready for Phase 1 implementation. Phase 1 may create the plugin skeleton when requested, but it should not add working maintenance mode behavior unless specifically requested.
 

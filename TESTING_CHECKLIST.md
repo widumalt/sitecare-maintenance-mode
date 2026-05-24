@@ -1,6 +1,6 @@
 # TESTING_CHECKLIST.md
 
-This checklist is for testing **SiteCare Maintenance Mode** as the plugin is built.
+This checklist is for testing **SitePause** as the plugin is built.
 
 The project is preparing for the first stable release, version `1.0.0`.
 
@@ -24,9 +24,9 @@ Use this checklist before tagging or publishing the first stable release.
 - [ ] Plugin activates without a fatal error.
 - [ ] Plugin deactivates without a fatal error.
 - [ ] WordPress Admin remains accessible after activation.
-- [ ] Settings > SiteCare Maintenance opens for administrators.
+- [ ] Settings > SitePause opens for administrators.
 - [ ] Non-admin users cannot manage plugin settings.
-- [ ] Admin tabs appear in order: General, Content, Design, Custom HTML, Bypass, Import / Export, Preview & Reset.
+- [ ] Admin tabs appear in order: General, Content, Branding, Custom HTML, Bypass, Import / Export, Preview & Reset.
 
 ### Settings Security
 
@@ -35,8 +35,9 @@ Use this checklist before tagging or publishing the first stable release.
 - [ ] Saved values are sanitized before saving.
 - [ ] Admin output is escaped before display.
 - [ ] Custom HTML is sanitized with `wp_kses_post()`.
+- [ ] Custom HTML output is rendered only after WordPress HTML sanitization; raw scripts and styles are not allowed.
 - [ ] Import validates JSON and ignores unknown, unsafe, or invalid values.
-- [ ] Export downloads only SiteCare Maintenance Mode settings and plugin metadata.
+- [ ] Export downloads only SitePause settings and plugin metadata.
 
 ### Maintenance Mode Behavior
 
@@ -98,6 +99,7 @@ Use this checklist before tagging or publishing the first stable release.
 - [ ] Title, message, logo, countdown, contact details, social links, footer text, and preset content are hidden during active custom HTML override.
 - [ ] Safe custom HTML such as `<p>`, `<strong>`, `<ul>`, `<li>`, and `<a>` displays correctly.
 - [ ] Unsafe markup such as `<script>alert(1)</script>` is removed or does not execute.
+- [ ] Style tags, script tags, iframes, and forms are removed or do not execute.
 
 ### Import, Export, Reset, and Uninstall
 
@@ -139,7 +141,7 @@ Use these notes when preparing the WordPress.org Plugin Directory SVN repository
 ## Repository Checks
 
 - [ ] The repo contains the planned documentation files.
-- [ ] Documentation consistently uses the name **SiteCare Maintenance Mode**.
+- [ ] Documentation consistently uses the name **SitePause**.
 - [ ] Documentation consistently uses the slug `sitecare-maintenance-mode`.
 - [ ] Roadmap items are described as future work unless they are part of the current phase.
 - [ ] No out-of-scope source files were created.

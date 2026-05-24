@@ -2,7 +2,7 @@
 /**
  * Main plugin bootstrap class.
  *
- * @package SiteCareMaintenanceMode
+ * @package SitePause
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

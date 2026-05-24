@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: SiteCare Maintenance Mode
+ * Plugin Name: SitePause - Custom HTML Offline & Maintenance Mode Activator
  * Plugin URI: https://github.com/widumalt/sitecare-maintenance-mode
- * Description: A beginner-friendly maintenance mode plugin for showing visitors a simple offline page while administrators keep working.
+ * Description: A beginner-friendly maintenance mode plugin for showing visitors a custom HTML or preset offline page while administrators keep working.
  * Version: 1.0.0
  * Author: WiTEDS
  * Author URI: https://witeds.com/WP-Plugins/
@@ -11,7 +11,7 @@
  * Text Domain: sitecare-maintenance-mode
  * Domain Path: /languages
  *
- * @package SiteCareMaintenanceMode
+ * @package SitePause
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -43,10 +43,6 @@ define( 'SITECARE_MAINTENANCE_URL', plugin_dir_url( __FILE__ ) );
  */
 define( 'SITECARE_MAINTENANCE_OPTION', 'sitecare_maintenance_options' );
 
-require_once SITECARE_MAINTENANCE_PATH . 'includes/class-sitecare-maintenance-plugin.php';
-require_once SITECARE_MAINTENANCE_PATH . 'includes/class-sitecare-maintenance-settings.php';
-require_once SITECARE_MAINTENANCE_PATH . 'includes/class-sitecare-maintenance-frontend.php';
-
 /**
  * Runs when the plugin is activated.
  *
@@ -76,21 +72,6 @@ function sitecare_maintenance_deactivate() {
 
 register_activation_hook( __FILE__, 'sitecare_maintenance_activate' );
 register_deactivation_hook( __FILE__, 'sitecare_maintenance_deactivate' );
-
-/**
- * Gets the main plugin bootstrap instance.
- *
- * @return SiteCare_Maintenance_Plugin
- */
-function sitecare_maintenance_plugin() {
-	static $plugin = null;
-
-	if ( null === $plugin ) {
-		$plugin = new SiteCare_Maintenance_Plugin();
-	}
-
-	return $plugin;
-}
 
 /**
  * Gets the default plugin options.
@@ -762,7 +743,7 @@ function sitecare_maintenance_enqueue_admin_assets( $hook_suffix ) {
 	$script_data = array(
 		'title'        => __( 'Choose Logo', 'sitecare-maintenance-mode' ),
 		'buttonText'   => __( 'Use this logo', 'sitecare-maintenance-mode' ),
-		'confirmReset' => __( 'Are you sure you want to reset all SiteCare Maintenance settings to defaults? This will not be saved until you click Save Settings.', 'sitecare-maintenance-mode' ),
+		'confirmReset' => __( 'Are you sure you want to reset all SitePause settings to defaults? This will not be saved until you click Save Settings.', 'sitecare-maintenance-mode' ),
 		'invalidRange' => __( 'End Date/Time must be after Start Date/Time.', 'sitecare-maintenance-mode' ),
 		'defaults'     => sitecare_maintenance_default_options(),
 	);
@@ -1008,8 +989,8 @@ function sitecare_maintenance_enqueue_admin_assets( $hook_suffix ) {
  */
 function sitecare_maintenance_add_admin_menu() {
 	add_options_page(
-		esc_html__( 'SiteCare Maintenance Mode', 'sitecare-maintenance-mode' ),
-		esc_html__( 'SiteCare Maintenance', 'sitecare-maintenance-mode' ),
+		esc_html__( 'SitePause - Custom HTML Offline & Maintenance Mode Activator', 'sitecare-maintenance-mode' ),
+		esc_html__( 'SitePause', 'sitecare-maintenance-mode' ),
 		'manage_options',
 		'sitecare-maintenance-mode',
 		'sitecare_maintenance_render_settings_page'
@@ -1194,7 +1175,7 @@ function sitecare_maintenance_render_admin_notices() {
 	$message = '';
 
 	if ( isset( $_GET['sitecare_maintenance_saved'] ) && '1' === sanitize_text_field( wp_unslash( $_GET['sitecare_maintenance_saved'] ) ) ) {
-		$message = __( 'SiteCare Maintenance Mode settings saved.', 'sitecare-maintenance-mode' );
+		$message = __( 'SitePause settings saved.', 'sitecare-maintenance-mode' );
 	}
 
 	if ( isset( $_GET['sitecare_maintenance_import'] ) ) {
@@ -1679,7 +1660,7 @@ function sitecare_maintenance_render_custom_html_field() {
 		name="<?php echo esc_attr( SITECARE_MAINTENANCE_OPTION ); ?>[custom_html]"
 	><?php echo esc_textarea( $options['custom_html'] ); ?></textarea>
 	<p class="description">
-		<?php esc_html_e( 'Allowed examples include paragraphs, lists, links, bold text, and emphasis. Scripts, iframes, forms, and unsafe markup are removed when settings are saved.', 'sitecare-maintenance-mode' ); ?>
+		<?php esc_html_e( 'Add limited safe HTML such as paragraphs, lists, links, bold text, and emphasis. Scripts, iframes, forms, styles, and unsafe markup are removed when settings are saved.', 'sitecare-maintenance-mode' ); ?>
 	</p>
 	<?php
 }
@@ -1984,7 +1965,7 @@ function sitecare_maintenance_render_import_export_tab() {
 	?>
 	<div class="sitecare-maintenance-import-export-panel">
 		<h2><?php esc_html_e( 'Export Settings', 'sitecare-maintenance-mode' ); ?></h2>
-		<p><?php esc_html_e( 'Export creates a JSON backup of the current SiteCare Maintenance Mode settings only.', 'sitecare-maintenance-mode' ); ?></p>
+		<p><?php esc_html_e( 'Export creates a JSON backup of the current SitePause settings only.', 'sitecare-maintenance-mode' ); ?></p>
 		<p>
 			<a class="button button-secondary" href="<?php echo esc_url( $export_url ); ?>">
 				<?php esc_html_e( 'Export Settings', 'sitecare-maintenance-mode' ); ?>
@@ -2039,7 +2020,7 @@ function sitecare_maintenance_render_settings_page() {
 	$tabs        = array(
 		'sitecare-maintenance-tab-general' => __( 'General', 'sitecare-maintenance-mode' ),
 		'sitecare-maintenance-tab-content' => __( 'Content', 'sitecare-maintenance-mode' ),
-		'sitecare-maintenance-tab-design'  => __( 'Design', 'sitecare-maintenance-mode' ),
+		'sitecare-maintenance-tab-design'  => __( 'Branding', 'sitecare-maintenance-mode' ),
 		'sitecare-maintenance-tab-custom-html' => __( 'Custom HTML', 'sitecare-maintenance-mode' ),
 		'sitecare-maintenance-tab-bypass'  => __( 'Bypass', 'sitecare-maintenance-mode' ),
 		'sitecare-maintenance-tab-import-export' => __( 'Import / Export', 'sitecare-maintenance-mode' ),
@@ -2047,7 +2028,7 @@ function sitecare_maintenance_render_settings_page() {
 	);
 	?>
 	<div class="wrap sitecare-maintenance-admin-page">
-		<h1><?php esc_html_e( 'SiteCare Maintenance Mode', 'sitecare-maintenance-mode' ); ?></h1>
+		<h1><?php esc_html_e( 'SitePause - Custom HTML Offline & Maintenance Mode Activator', 'sitecare-maintenance-mode' ); ?></h1>
 		<?php settings_errors( SITECARE_MAINTENANCE_OPTION ); ?>
 		<p class="sitecare-maintenance-status <?php echo esc_attr( $is_enabled ? 'is-on' : 'is-off' ); ?>">
 			<?php
@@ -2067,7 +2048,7 @@ function sitecare_maintenance_render_settings_page() {
 			<?php
 			settings_fields( 'sitecare_maintenance_settings' );
 			?>
-			<nav class="nav-tab-wrapper sitecare-maintenance-tabs" role="tablist" aria-label="<?php esc_attr_e( 'SiteCare Maintenance settings tabs', 'sitecare-maintenance-mode' ); ?>">
+			<nav class="nav-tab-wrapper sitecare-maintenance-tabs" role="tablist" aria-label="<?php esc_attr_e( 'SitePause settings tabs', 'sitecare-maintenance-mode' ); ?>">
 				<?php foreach ( $tabs as $tab_id => $tab_label ) : ?>
 					<a
 						href="#<?php echo esc_attr( $tab_id ); ?>"
@@ -2125,7 +2106,7 @@ function sitecare_maintenance_render_settings_page() {
 			<div id="sitecare-maintenance-tab-preview" class="sitecare-maintenance-tab-panel" role="tabpanel">
 				<div class="sitecare-maintenance-actions-panel">
 					<h2><?php esc_html_e( 'Preview & Reset', 'sitecare-maintenance-mode' ); ?></h2>
-					<p><?php esc_html_e( 'Preview the current saved maintenance page, or reset the visible form fields before saving.', 'sitecare-maintenance-mode' ); ?></p>
+					<p><?php esc_html_e( 'Preview the current saved offline page, or reset the visible form fields before saving.', 'sitecare-maintenance-mode' ); ?></p>
 					<p>
 						<a class="button button-secondary" href="<?php echo esc_url( $preview_url ); ?>" target="_blank" rel="noopener noreferrer">
 							<?php esc_html_e( 'Preview Maintenance Page', 'sitecare-maintenance-mode' ); ?>
@@ -2772,4 +2753,17 @@ function sitecare_maintenance_maybe_render_page() {
 
 	sitecare_maintenance_render_page( 503 );
 }
-sitecare_maintenance_plugin()->run();
+/**
+ * Initialize the plugin.
+ */
+add_action( 'plugins_loaded', function() {
+	require_once SITECARE_MAINTENANCE_PATH . 'includes/class-sitecare-maintenance-plugin.php';
+	require_once SITECARE_MAINTENANCE_PATH . 'includes/class-sitecare-maintenance-settings.php';
+	require_once SITECARE_MAINTENANCE_PATH . 'includes/class-sitecare-maintenance-frontend.php';
+
+	static $plugin = null;
+	if ( null === $plugin ) {
+		$plugin = new SiteCare_Maintenance_Plugin();
+		$plugin->run();
+	}
+} );

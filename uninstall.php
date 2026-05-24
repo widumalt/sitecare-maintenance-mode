@@ -1,8 +1,8 @@
 <?php
 /**
- * Uninstall file for SiteCare Maintenance Mode.
+ * Uninstall file for SitePause.
  *
- * @package SiteCareMaintenanceMode
+ * @package SitePause
  */
 
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {

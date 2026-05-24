@@ -2,7 +2,7 @@
 /**
  * Frontend maintenance mode class.
  *
- * @package SiteCareMaintenanceMode
+ * @package SitePause
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
