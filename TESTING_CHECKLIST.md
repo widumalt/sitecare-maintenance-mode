@@ -1,10 +1,121 @@
 # TESTING_CHECKLIST.md
 
-## TESTING_CHECKLIST.md
-
 This checklist is for testing **SiteCare Maintenance Mode** as the plugin is built.
 
-The project is ready for Phase 1 implementation. Phase 1 should test that WordPress can detect, activate, and deactivate the plugin skeleton.
+The project is preparing for the first stable release, version `1.0.0`.
+
+## Version 1.0.0 Release Checklist
+
+Use this checklist before tagging or publishing the first stable release.
+
+### Version and Files
+
+- [ ] Main plugin header shows version `1.0.0`.
+- [ ] `SITECARE_MAINTENANCE_VERSION` is `1.0.0`.
+- [ ] `readme.txt` stable tag is `1.0.0`.
+- [ ] `readme.txt` changelog includes version `1.0.0`.
+- [ ] No Composer, npm, React, framework, licensing, payment, email capture, or unrelated feature files were added.
+- [ ] Plugin source files and preset templates are included.
+- [ ] LocalWP core WordPress files, uploads, database files, and debug logs are not committed.
+
+### Activation and Basic Admin
+
+- [ ] Plugin appears in WordPress Admin > Plugins.
+- [ ] Plugin activates without a fatal error.
+- [ ] Plugin deactivates without a fatal error.
+- [ ] WordPress Admin remains accessible after activation.
+- [ ] Settings > SiteCare Maintenance opens for administrators.
+- [ ] Non-admin users cannot manage plugin settings.
+- [ ] Admin tabs appear in order: General, Content, Design, Custom HTML, Bypass, Import / Export, Preview & Reset.
+
+### Settings Security
+
+- [ ] Settings saves require the `manage_options` capability.
+- [ ] Settings forms use nonce protection.
+- [ ] Saved values are sanitized before saving.
+- [ ] Admin output is escaped before display.
+- [ ] Custom HTML is sanitized with `wp_kses_post()`.
+- [ ] Import validates JSON and ignores unknown, unsafe, or invalid values.
+- [ ] Export downloads only SiteCare Maintenance Mode settings and plugin metadata.
+
+### Maintenance Mode Behavior
+
+- [ ] Manual maintenance mode can be enabled and disabled.
+- [ ] Scheduled maintenance mode validates required start and end times.
+- [ ] Schedule start must be before schedule end.
+- [ ] Schedule uses the WordPress site timezone.
+- [ ] Logged-out visitors see the maintenance page when maintenance mode is active.
+- [ ] Logged-out visitors see the normal site when maintenance mode is inactive.
+- [ ] Administrators can view the normal site while maintenance mode is active.
+- [ ] Selected bypass roles can view the normal site while maintenance mode is active.
+- [ ] Whitelisted exact IPv4 and IPv6 addresses can bypass maintenance mode.
+- [ ] `wp-admin` remains accessible.
+- [ ] `wp-login.php` remains accessible.
+- [ ] AJAX requests are not blocked.
+- [ ] REST API requests are not blocked.
+- [ ] Cron requests are not blocked.
+
+### SEO and Headers
+
+- [ ] Real visitor maintenance responses send HTTP `503`.
+- [ ] Real visitor maintenance responses include `Retry-After: 3600`.
+- [ ] Real visitor maintenance responses include no-cache headers.
+- [ ] Maintenance page HTML includes `<meta name="robots" content="noindex, nofollow">`.
+- [ ] Preview mode does not send HTTP `503`.
+- [ ] Preview mode does not send `Retry-After`.
+
+### Content and Design
+
+- [ ] Custom page title displays correctly.
+- [ ] Custom message displays correctly.
+- [ ] Contact email displays only when provided and uses `mailto:`.
+- [ ] Contact phone displays only when provided and uses `tel:`.
+- [ ] Social links display only when provided and open in a new tab with safe `rel` attributes.
+- [ ] Footer text displays only when provided.
+- [ ] Logo displays when selected and has meaningful alt text.
+- [ ] Background color applies correctly.
+- [ ] Text color applies correctly.
+- [ ] Layout width options apply correctly.
+- [ ] Countdown appears only when enabled with a valid future target.
+- [ ] Countdown does not automatically disable maintenance mode.
+
+### Preset Templates
+
+- [ ] Classic saves correctly and displays correctly in preview.
+- [ ] Center Card saves correctly and displays correctly in preview.
+- [ ] Minimal saves correctly and displays correctly in preview.
+- [ ] Bold Panel saves correctly and displays correctly in preview.
+- [ ] Split Screen saves correctly and displays correctly in preview.
+- [ ] All five presets display correctly for logged-out visitors when maintenance mode is active.
+- [ ] All five presets are readable on mobile, tablet, and desktop.
+- [ ] Preset template files output only plugin-managed preset markup, not full standalone HTML documents.
+
+### Custom HTML Override
+
+- [ ] When Custom HTML Override is disabled, the selected preset displays normally.
+- [ ] When Custom HTML Override is enabled and the custom HTML field is empty, the selected preset displays normally.
+- [ ] When Custom HTML Override is enabled and non-empty, only the custom HTML content displays.
+- [ ] Title, message, logo, countdown, contact details, social links, footer text, and preset content are hidden during active custom HTML override.
+- [ ] Safe custom HTML such as `<p>`, `<strong>`, `<ul>`, `<li>`, and `<a>` displays correctly.
+- [ ] Unsafe markup such as `<script>alert(1)</script>` is removed or does not execute.
+
+### Import, Export, Reset, and Uninstall
+
+- [ ] Export downloads readable JSON with plugin metadata and settings only.
+- [ ] Import restores valid exported settings.
+- [ ] Invalid JSON shows an error notice.
+- [ ] Invalid role keys are ignored during import.
+- [ ] Invalid IP addresses are ignored during import.
+- [ ] Imported custom HTML is sanitized again.
+- [ ] Reset Settings changes visible fields to defaults without saving until Save Settings is clicked.
+- [ ] Uninstall deletes only `sitecare_maintenance_options`.
+
+### Final Debug Checks
+
+- [ ] `wp-content/debug.log` has no new PHP warnings, notices, or fatal errors after activation.
+- [ ] `wp-content/debug.log` has no new PHP warnings, notices, or fatal errors after saving settings.
+- [ ] `wp-content/debug.log` has no new PHP warnings, notices, or fatal errors after previewing all presets.
+- [ ] `wp-content/debug.log` has no new PHP warnings, notices, or fatal errors after import/export testing.
 
 ## Repository Checks
 

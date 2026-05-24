@@ -190,6 +190,70 @@ html {
 	padding-top: 0;
 }
 
+.sitecare-template-bold-panel {
+	background:
+		linear-gradient(135deg, rgba(29, 35, 39, 0.92), rgba(34, 113, 177, 0.62)),
+		var(--sitecare-maintenance-background, #f5f5f5);
+}
+
+.sitecare-template-bold-panel .sitecare-maintenance-page {
+	border-left: 8px solid currentColor;
+	background: rgba(255, 255, 255, 0.92);
+	box-shadow: 0 28px 80px rgba(0, 0, 0, 0.22);
+	text-align: left;
+}
+
+.sitecare-template-bold-panel .sitecare-maintenance-logo,
+.sitecare-template-bold-panel .sitecare-maintenance-message,
+.sitecare-template-bold-panel .sitecare-maintenance-custom-html,
+.sitecare-template-bold-panel .sitecare-maintenance-countdown-units,
+.sitecare-template-bold-panel .sitecare-maintenance-footer {
+	margin-left: 0;
+	margin-right: 0;
+}
+
+.sitecare-template-bold-panel .sitecare-maintenance-contact-list,
+.sitecare-template-bold-panel .sitecare-maintenance-social-list {
+	justify-content: flex-start;
+}
+
+.sitecare-template-split-screen .sitecare-maintenance-page {
+	width: min(100%, 980px);
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(280px, 0.75fr);
+	gap: clamp(28px, 5vw, 52px);
+	align-items: center;
+	text-align: left;
+}
+
+.sitecare-maintenance-split-primary,
+.sitecare-maintenance-split-secondary {
+	min-width: 0;
+}
+
+.sitecare-template-split-screen .sitecare-maintenance-logo,
+.sitecare-template-split-screen .sitecare-maintenance-message,
+.sitecare-template-split-screen .sitecare-maintenance-custom-html,
+.sitecare-template-split-screen .sitecare-maintenance-footer {
+	margin-left: 0;
+	margin-right: 0;
+}
+
+.sitecare-template-split-screen .sitecare-maintenance-contact {
+	margin-top: 0;
+	padding: clamp(22px, 4vw, 34px);
+	border: 1px solid rgba(100, 105, 112, 0.24);
+	border-radius: 12px;
+	background: rgba(255, 255, 255, 0.22);
+}
+
+.sitecare-template-split-screen .sitecare-maintenance-contact-list,
+.sitecare-template-split-screen .sitecare-maintenance-social-list {
+	flex-direction: column;
+	align-items: stretch;
+	justify-content: flex-start;
+}
+
 .sitecare-maintenance-contact h2 {
 	margin: 0 0 16px;
 	color: var(--sitecare-maintenance-text, #111111);
@@ -277,6 +341,21 @@ html {
 
 	.sitecare-template-minimal .sitecare-maintenance-page {
 		padding-top: 40px;
+	}
+
+	.sitecare-template-bold-panel .sitecare-maintenance-page {
+		border-left-width: 4px;
+	}
+
+	.sitecare-template-split-screen .sitecare-maintenance-page {
+		display: block;
+	}
+
+	.sitecare-template-split-screen .sitecare-maintenance-contact {
+		margin-top: clamp(28px, 5vw, 40px);
+		padding: 0;
+		border: 0;
+		background: transparent;
 	}
 
 	.sitecare-maintenance-countdown-units {

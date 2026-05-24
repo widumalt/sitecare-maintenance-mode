@@ -12,13 +12,13 @@ A beginner-friendly WordPress maintenance mode plugin.
 
 == Description ==
 
-SiteCare Maintenance Mode helps WordPress administrators show visitors a simple maintenance or offline page while site work is in progress.
+SiteCare Maintenance Mode helps WordPress administrators show visitors a maintenance or offline page while site work is in progress.
 
-This MVP version adds basic admin settings for enabling or disabling maintenance mode, scheduling maintenance windows, customizing the maintenance page text, showing optional safe HTML content, showing optional visitor contact details, applying simple branding, choosing a frontend design preset, showing an optional countdown timer, previewing the maintenance page, choosing logged-in roles and trusted IP addresses that can bypass maintenance mode, and resetting the visible settings form to defaults. When enabled, visitors see a simple maintenance page, while administrators, selected logged-in roles, and whitelisted IP addresses can continue viewing the normal site.
+Version 1.0.0 includes admin settings for enabling or disabling maintenance mode, scheduling maintenance windows, customizing the maintenance page text, showing optional safe custom HTML, showing optional visitor contact details, applying simple branding, choosing one of five frontend design presets, showing an optional countdown timer, previewing the maintenance page, choosing logged-in roles and trusted IP addresses that can bypass maintenance mode, importing or exporting settings as JSON, and resetting the visible settings form to defaults. When enabled, visitors see the maintenance page, while administrators, selected logged-in roles, and whitelisted IP addresses can continue viewing the normal site.
 
 The settings page is organized into simple tabs for General, Content, Design, Custom HTML, Bypass, Import / Export, and Preview & Reset controls.
 
-Future phases may add a fuller template system, custom HTML, and other advanced controls.
+This first stable release keeps the plugin lightweight and beginner-friendly. It does not use Composer, npm, React, external frameworks, custom database tables, payment code, or licensing code.
 
 == Installation ==
 
@@ -41,7 +41,7 @@ You can customize the maintenance page title, message, safe custom HTML content,
 
 = Which design presets are included? =
 
-This version includes Classic, Center Card, and Minimal design presets. The settings page shows simple HTML/CSS thumbnail previews for each preset.
+This version includes Classic, Center Card, Minimal, Bold Panel, and Split Screen design presets. The settings page shows simple HTML/CSS thumbnail previews for each preset.
 
 = Can I add custom HTML? =
 
@@ -81,7 +81,7 @@ The plugin deletes its `sitecare_maintenance_options` option. It does not delete
 
 = Can I use this on a live site now? =
 
-This version is for development and learning. Test it carefully before using it on a live site.
+This is the first stable 1.0.0 release. Test changes on a staging or local site before using them on a production website.
 
 == Changelog ==
 
@@ -94,7 +94,7 @@ This version is for development and learning. Test it carefully before using it 
 * Added scheduled maintenance mode with WordPress timezone-aware start and end times.
 * Added role-based bypass settings for selected logged-in user roles.
 * Added IP whitelist bypass for exact IPv4 and IPv6 addresses.
-* Added Classic, Center Card, and Minimal frontend template selection.
+* Added Classic, Center Card, Minimal, Bold Panel, and Split Screen frontend template selection.
 * Added HTML/CSS template thumbnail previews in the admin settings page.
 * Added an optional visual countdown timer.
 * Added a small class-based organization layer for settings and frontend hooks.
@@ -104,6 +104,9 @@ This version is for development and learning. Test it carefully before using it 
 * Organized the admin settings page into simple WordPress-style tabs.
 * Moved Custom HTML Override into its own admin tab with clearer override warnings.
 * Added JSON import and export for plugin settings.
+* Moved built-in preset markup into separate PHP template files under `templates/presets`.
+* Cleaned preset templates so they render only plugin-managed maintenance content inside the shared page shell.
+* Added a small admin settings page credit for WiTEDS.
 * Added editable maintenance page title and message fields.
 * Added optional email, phone, social link, and footer text fields.
 * Added logo, color, and layout width settings.
