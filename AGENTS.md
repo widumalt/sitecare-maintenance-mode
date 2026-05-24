@@ -17,18 +17,18 @@ The plugin will let site administrators enable a maintenance/offline mode, show 
 
 - OS: Windows
 - Local source folder: `C:\dev\WP-maintenance-offline-plugin`
-- GitHub repo: `https://github.com/widumalt/sitecare-maintenance-mode`
+- GitHub repo: `https://github.com/widumalt/sitepause-custom-html-offline-maintenance-mode-activator`
 - WordPress local environment: LocalWP
-- LocalWP site name: `sitecare-plugin-dev`
+- LocalWP site name: `sitepause-plugin-dev`
 - The plugin will be linked into the LocalWP `wp-content/plugins` folder using a Windows junction.
 
 ## Plugin Identity
 
 - Plugin name: `SitePause - Custom HTML Offline & Maintenance Mode Activator`
-- Plugin slug: `sitecare-maintenance-mode`
-- Main plugin file: `sitecare-maintenance-mode.php`
-- Text domain: `sitecare-maintenance-mode`
-- Prefix all functions, classes, constants, options, and hooks with `sitecare` or `SiteCare` to avoid conflicts.
+- Plugin slug: `sitepause-custom-html-offline-maintenance-mode-activator`
+- Main plugin file: `sitepause-custom-html-offline-maintenance-mode-activator.php`
+- Text domain: `sitepause-custom-html-offline-maintenance-mode-activator`
+- Prefix all functions, classes, constants, options, and hooks with `sitepause` or `SitePause` to avoid conflicts.
 
 ## Goals for Future Agents
 

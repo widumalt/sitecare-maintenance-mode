@@ -15,13 +15,13 @@ Phase 2 will be the first functional MVP with an admin toggle, saved setting, vi
 ## Project Details
 
 - Plugin name: `SitePause - Custom HTML Offline & Maintenance Mode Activator`
-- Plugin slug: `sitecare-maintenance-mode`
-- Main plugin file: `sitecare-maintenance-mode.php`
-- Text domain: `sitecare-maintenance-mode`
+- Plugin slug: `sitepause-custom-html-offline-maintenance-mode-activator`
+- Main plugin file: `sitepause-custom-html-offline-maintenance-mode-activator.php`
+- Text domain: `sitepause-custom-html-offline-maintenance-mode-activator`
 - Local project folder: `C:\dev\WP-maintenance-offline-plugin`
-- GitHub repository: `https://github.com/widumalt/sitecare-maintenance-mode`
+- GitHub repository: `https://github.com/widumalt/sitepause-custom-html-offline-maintenance-mode-activator`
 - Local WordPress environment: LocalWP
-- LocalWP site name: `sitecare-plugin-dev`
+- LocalWP site name: `sitepause-plugin-dev`
 
 ## What This Plugin Will Do
 

@@ -17,7 +17,7 @@ Keeping these responsibilities clear will make the plugin easier to understand a
 
 Phase 1 should keep the architecture simple:
 
-- The main plugin file, `sitecare-maintenance-mode.php`, loads basic constants and any required includes.
+- The main plugin file, `sitepause-custom-html-offline-maintenance-mode-activator.php`, loads basic constants and any required includes.
 - No complex class architecture is required in Phase 1.
 - Folders may be added now only to keep the project organized.
 - Classes should be added only when they become useful in Phase 2 or later.
@@ -116,7 +116,7 @@ The plugin should use the WordPress Options API.
 
 Recommended naming convention:
 
-- Use one main option array where practical: `sitecare_maintenance_options`.
+- Use one main option array where practical: `sitepause_maintenance_options`.
 - For the MVP, a simple option is acceptable if it keeps the implementation easier to understand.
 - If a simple option is used first, document that decision in `DECISIONS.md`.
 - Use safe defaults so the plugin works even before an admin customizes anything.

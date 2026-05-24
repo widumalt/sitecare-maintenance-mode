@@ -46,7 +46,7 @@ Codex can work more cleanly with a GitHub repo, and Git gives version history.
 
 Impact:
 
-Every meaningful milestone should be committed and pushed to `https://github.com/widumalt/sitecare-maintenance-mode`.
+Every meaningful milestone should be committed and pushed to `https://github.com/widumalt/sitepause-custom-html-offline-maintenance-mode-activator`.
 
 ### 2026-05-23: Move from planning-only mode to Phase 1 implementation readiness
 

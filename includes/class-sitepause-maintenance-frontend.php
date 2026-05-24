@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Registers frontend hooks for maintenance rendering and preview mode.
  */
-class SiteCare_Maintenance_Frontend {
+class SitePause_Maintenance_Frontend {
 
 	/**
 	 * Registers frontend-related hooks.
@@ -32,6 +32,6 @@ class SiteCare_Maintenance_Frontend {
 	 * @return void
 	 */
 	public function maybe_render_page() {
-		sitecare_maintenance_maybe_render_page();
+		sitepause_maintenance_maybe_render_page();
 	}
 }

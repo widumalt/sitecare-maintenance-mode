@@ -11,7 +11,7 @@ Use this checklist before tagging or publishing the first stable release.
 ### Version and Files
 
 - [ ] Main plugin header shows version `1.0.0`.
-- [ ] `SITECARE_MAINTENANCE_VERSION` is `1.0.0`.
+- [ ] `SITEPAUSE_MAINTENANCE_VERSION` is `1.0.0`.
 - [ ] `readme.txt` stable tag is `1.0.0`.
 - [ ] `readme.txt` changelog includes version `1.0.0`.
 - [ ] No Composer, npm, React, framework, licensing, payment, email capture, or unrelated feature files were added.
@@ -110,7 +110,7 @@ Use this checklist before tagging or publishing the first stable release.
 - [ ] Invalid IP addresses are ignored during import.
 - [ ] Imported custom HTML is sanitized again.
 - [ ] Reset Settings changes visible fields to defaults without saving until Save Settings is clicked.
-- [ ] Uninstall deletes only `sitecare_maintenance_options`.
+- [ ] Uninstall deletes only `sitepause_maintenance_options`.
 
 ### Final Debug Checks
 
@@ -135,24 +135,24 @@ Use these notes when preparing the WordPress.org Plugin Directory SVN repository
   - `assets/screenshot-2.png` sized for the maintenance page screenshot.
 - [ ] Do not generate fake screenshots, icons, or banners. Use real plugin screenshots and brand-approved artwork.
 - [ ] Do not commit LocalWP files, debug logs, database exports, uploads, build files, ZIP files, backups, or temporary files to SVN.
-- [ ] Include release plugin files only: `sitecare-maintenance-mode.php`, `readme.txt`, `uninstall.php`, `index.php`, `includes/`, `admin/`, `public/`, `templates/`, plugin runtime `assets/`, and `languages/`.
+- [ ] Include release plugin files only: `sitepause-custom-html-offline-maintenance-mode-activator.php`, `readme.txt`, `uninstall.php`, `index.php`, `includes/`, `admin/`, `public/`, `templates/`, plugin runtime `assets/`, and `languages/`.
 - [ ] Keep development planning docs out of the WordPress.org `/trunk` release copy unless intentionally submitting them as documentation.
 
 ## Repository Checks
 
 - [ ] The repo contains the planned documentation files.
 - [ ] Documentation consistently uses the name **SitePause**.
-- [ ] Documentation consistently uses the slug `sitecare-maintenance-mode`.
+- [ ] Documentation consistently uses the slug `sitepause-custom-html-offline-maintenance-mode-activator`.
 - [ ] Roadmap items are described as future work unless they are part of the current phase.
 - [ ] No out-of-scope source files were created.
 
 ## LocalWP Environment Checklist
 
 - [ ] LocalWP is installed.
-- [ ] LocalWP site created: `sitecare-plugin-dev`.
+- [ ] LocalWP site created: `sitepause-plugin-dev`.
 - [ ] WordPress admin login works.
 - [ ] Plugin source folder exists: `C:\dev\WP-maintenance-offline-plugin`.
-- [ ] GitHub remote points to `https://github.com/widumalt/sitecare-maintenance-mode`.
+- [ ] GitHub remote points to `https://github.com/widumalt/sitepause-custom-html-offline-maintenance-mode-activator`.
 - [ ] Plugin folder is linked into LocalWP `wp-content/plugins` using a Windows junction.
 - [ ] `WP_DEBUG` is enabled.
 - [ ] `WP_DEBUG_LOG` is enabled.

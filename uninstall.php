@@ -9,4 +9,4 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
 
-delete_option( 'sitecare_maintenance_options' );
+delete_option( 'sitepause_maintenance_options' );

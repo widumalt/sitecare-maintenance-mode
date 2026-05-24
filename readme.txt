@@ -22,7 +22,7 @@ This first stable release keeps the plugin lightweight and beginner-friendly. It
 
 == Installation ==
 
-1. Copy or link the `sitecare-maintenance-mode` plugin folder into `wp-content/plugins`.
+1. Copy or link the `sitepause-custom-html-offline-maintenance-mode-activator` plugin folder into `wp-content/plugins`.
 2. Open WordPress Admin > Plugins.
 3. Find "SitePause - Custom HTML Offline & Maintenance Mode Activator".
 4. Click "Activate".
@@ -75,7 +75,7 @@ No. The plugin uses the WordPress Options API and does not create custom databas
 
 = What happens when I uninstall the plugin? =
 
-The plugin deletes its `sitecare_maintenance_options` option. It does not delete anything else.
+The plugin deletes its `sitepause_maintenance_options` option. It does not delete anything else.
 
 = Can I use this on a live site now? =
 

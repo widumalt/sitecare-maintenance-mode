@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Registers admin settings hooks for the plugin.
  */
-class SiteCare_Maintenance_Settings {
+class SitePause_Maintenance_Settings {
 
 	/**
 	 * Whether hooks have been registered.
@@ -43,8 +43,8 @@ class SiteCare_Maintenance_Settings {
 		add_action( 'admin_bar_menu', array( $this, 'add_admin_bar_status' ), 100 );
 		add_action( 'admin_head', array( $this, 'print_admin_bar_status_styles' ) );
 		add_action( 'wp_head', array( $this, 'print_admin_bar_status_styles' ) );
-		add_action( 'admin_post_sitecare_maintenance_export_settings', array( $this, 'export_settings' ) );
-		add_action( 'admin_post_sitecare_maintenance_import_settings', array( $this, 'import_settings' ) );
+		add_action( 'admin_post_sitepause_maintenance_export_settings', array( $this, 'export_settings' ) );
+		add_action( 'admin_post_sitepause_maintenance_import_settings', array( $this, 'import_settings' ) );
 		add_filter( 'wp_redirect', array( $this, 'filter_settings_redirect' ) );
 	}
 
@@ -54,7 +54,7 @@ class SiteCare_Maintenance_Settings {
 	 * @return void
 	 */
 	public function register_settings() {
-		sitecare_maintenance_register_settings();
+		sitepause_maintenance_register_settings();
 	}
 
 	/**
@@ -64,7 +64,7 @@ class SiteCare_Maintenance_Settings {
 	 * @return array
 	 */
 	public static function sanitize_options( $input ) {
-		return sitecare_maintenance_sanitize_options( $input );
+		return sitepause_maintenance_sanitize_options( $input );
 	}
 
 	/**
@@ -74,7 +74,7 @@ class SiteCare_Maintenance_Settings {
 	 * @return void
 	 */
 	public function enqueue_admin_assets( $hook_suffix ) {
-		sitecare_maintenance_enqueue_admin_assets( $hook_suffix );
+		sitepause_maintenance_enqueue_admin_assets( $hook_suffix );
 	}
 
 	/**
@@ -83,7 +83,7 @@ class SiteCare_Maintenance_Settings {
 	 * @return void
 	 */
 	public function add_admin_menu() {
-		sitecare_maintenance_add_admin_menu();
+		sitepause_maintenance_add_admin_menu();
 	}
 
 	/**
@@ -93,7 +93,7 @@ class SiteCare_Maintenance_Settings {
 	 * @return string
 	 */
 	public function filter_settings_redirect( $location ) {
-		return sitecare_maintenance_filter_settings_redirect( $location );
+		return sitepause_maintenance_filter_settings_redirect( $location );
 	}
 
 	/**
@@ -102,7 +102,7 @@ class SiteCare_Maintenance_Settings {
 	 * @return void
 	 */
 	public function render_admin_notices() {
-		sitecare_maintenance_render_admin_notices();
+		sitepause_maintenance_render_admin_notices();
 	}
 
 	/**
@@ -112,7 +112,7 @@ class SiteCare_Maintenance_Settings {
 	 * @return void
 	 */
 	public function add_admin_bar_status( $wp_admin_bar ) {
-		sitecare_maintenance_add_admin_bar_status( $wp_admin_bar );
+		sitepause_maintenance_add_admin_bar_status( $wp_admin_bar );
 	}
 
 	/**
@@ -121,7 +121,7 @@ class SiteCare_Maintenance_Settings {
 	 * @return void
 	 */
 	public function print_admin_bar_status_styles() {
-		sitecare_maintenance_print_admin_bar_status_styles();
+		sitepause_maintenance_print_admin_bar_status_styles();
 	}
 
 	/**
@@ -130,7 +130,7 @@ class SiteCare_Maintenance_Settings {
 	 * @return void
 	 */
 	public function export_settings() {
-		sitecare_maintenance_handle_export_settings();
+		sitepause_maintenance_handle_export_settings();
 	}
 
 	/**
@@ -139,6 +139,6 @@ class SiteCare_Maintenance_Settings {
 	 * @return void
 	 */
 	public function import_settings() {
-		sitecare_maintenance_handle_import_settings();
+		sitepause_maintenance_handle_import_settings();
 	}
 }

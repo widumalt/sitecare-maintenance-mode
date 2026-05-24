@@ -33,7 +33,7 @@ Goal: make WordPress recognize the plugin in LocalWP.
 Planned skeleton structure:
 
 ```text
-sitecare-maintenance-mode.php
+sitepause-custom-html-offline-maintenance-mode-activator.php
 readme.txt
 uninstall.php
 index.php
